@@ -138,6 +138,35 @@ body { display:flex; flex-direction:column; }
 #step-txt  { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #step-sub  { font-size:11px; color:var(--accent); margin-top:1px; }
 
+/* ── Route side panel ── */
+#route-panel { position:fixed; top:80px; right:0; bottom:0; width:280px;
+  background:var(--surf); border-left:1px solid var(--border);
+  display:flex; flex-direction:column; z-index:15;
+  transform:translateX(100%); transition:transform .25s ease;
+  box-shadow:-4px 0 24px rgba(0,0,0,.55); }
+#route-panel.open { transform:translateX(0); }
+#rp-hdr { display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+#rp-title { font-size:14px; font-weight:600; }
+#rp-close { background:none; border:none; color:var(--muted); font-size:20px;
+  cursor:pointer; line-height:1; padding:0 2px; }
+#rp-close:hover { color:var(--text); }
+#rp-summary { padding:7px 14px; font-size:12px; color:var(--muted);
+  border-bottom:1px solid var(--border); flex-shrink:0; }
+#rp-steps { flex:1; overflow-y:auto; }
+#rp-steps::-webkit-scrollbar { width:4px; }
+#rp-steps::-webkit-scrollbar-thumb { background:#444; border-radius:2px; }
+.rstep { display:flex; align-items:flex-start; gap:8px; padding:10px 12px;
+  border-bottom:1px solid var(--border); cursor:pointer; transition:background .1s; }
+.rstep:hover { background:var(--surf2); }
+.rstep.active { background:rgba(33,150,243,.13); border-left:3px solid var(--accent);
+  padding-left:9px; }
+.rstep-num { font-size:11px; color:var(--muted); min-width:20px; flex-shrink:0; padding-top:1px; }
+.rstep-icon { font-size:14px; flex-shrink:0; line-height:1.4; }
+.rstep-body { flex:1; min-width:0; }
+.rstep-txt { font-size:12px; color:var(--text); line-height:1.35; }
+.rstep-dir { font-size:11px; color:var(--accent); margin-top:2px; }
+
 /* ── Loading overlay ── */
 #loading { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column;
   align-items:center; justify-content:center; z-index:100; gap:14px; text-align:center; }
@@ -288,6 +317,16 @@ body { display:flex; flex-direction:column; }
   <button class="snav" id="sp-next" onclick="nextStep()">▶</button>
 </div>
 
+<!-- Route side panel -->
+<div id="route-panel">
+  <div id="rp-hdr">
+    <span id="rp-title">Route</span>
+    <button id="rp-close" onclick="closeRoutePanel()">✕</button>
+  </div>
+  <div id="rp-summary"></div>
+  <div id="rp-steps"></div>
+</div>
+
 <input type="file" id="img-file" accept="image/*" style="display:none" onchange="loadImg(event)">
 
 <!-- Graph data — auto-generated from pedway_graph.json -->
@@ -299,7 +338,10 @@ body { display:flex; flex-direction:column; }
 // ═══════════════════════════════════════════════════════════════════
 function displayName(n) {
   if (n.name) return n.name;
-  return n.type.charAt(0).toUpperCase() + n.type.slice(1);
+  const type = n.type.charAt(0).toUpperCase() + n.type.slice(1);
+  if (n.lat != null && n.lng != null)
+    return `${type} (${n.lat.toFixed(5)}, ${n.lng.toFixed(5)})`;
+  return type;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -651,6 +693,7 @@ function clearPt(which) {
   }
   G.route=[]; G.routeEdges=new Set(); G.steps=[];
   document.getElementById('step-panel').style.display='none';
+  closeRoutePanel();
   updateResetBtn();
   sched();
 }
@@ -664,6 +707,7 @@ function resetAll() {
   document.getElementById('to-x').style.display='none';
   document.getElementById('step-panel').style.display='none';
   G.activeInput='from';
+  closeRoutePanel();
   updateResetBtn();
   sched();
 }
@@ -713,35 +757,91 @@ function route() {
   G.steps=buildSteps(path);
   G.stepIdx=0;
   updateStep();
+  openRoutePanel();
   sched();
+}
+
+function openRoutePanel() {
+  // Compute total distance in meters (0.42 m/px from affine calibration)
+  let totalPx=0;
+  for(let i=0;i<G.route.length-1;i++){
+    const a=G.nodeMap[G.route[i]], b=G.nodeMap[G.route[i+1]];
+    if(a&&b) totalPx+=Math.hypot(a.x-b.x, a.y-b.y);
+  }
+  const meters=Math.round(totalPx*0.42);
+  const distLabel=meters>=1000?(meters/1000).toFixed(2)+' km':meters+' m';
+
+  document.getElementById('rp-title').textContent=`Route — ${G.steps.length} steps`;
+  document.getElementById('rp-summary').textContent=`~${distLabel} total`;
+  renderRouteSteps();
+  document.getElementById('route-panel').classList.add('open');
+}
+
+function renderRouteSteps() {
+  document.getElementById('rp-steps').innerHTML=G.steps.map((s,i)=>`
+    <div class="rstep${i===G.stepIdx?' active':''}" onclick="jumpStep(${i})">
+      <span class="rstep-num">${i+1}</span>
+      <span class="rstep-icon">${s.arrow}</span>
+      <div class="rstep-body">
+        <div class="rstep-txt">${s.text}</div>
+        ${s.dir?`<div class="rstep-dir">Heading ${s.dir}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function jumpStep(idx) { G.stepIdx=idx; updateStep(); }
+
+function closeRoutePanel() {
+  document.getElementById('route-panel').classList.remove('open');
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // Step instructions
 // ═══════════════════════════════════════════════════════════════════
 function buildSteps(path) {
-  const waypts=[];
-  for(let i=0;i<path.length;i++){
-    const n=G.nodeMap[path[i]];
-    if(!n) continue;
-    if(n.name||i===0||i===path.length-1) waypts.push({n,i});
-  }
-  if(waypts.length<2) return waypts.map((w,i)=>({
-    node:w.n, text:i===0?`Start at ${displayName(w.n)}`:(`Arrive at ${displayName(w.n)}`), arrow:'●', dir:''
+  if (!path || path.length === 0) return [];
+  const nodes = path.map(id => G.nodeMap[id]).filter(Boolean);
+  if (nodes.length < 2) return nodes.map((n,i) => ({
+    node:n, text:i===0?`Start at ${displayName(n)}`:`Arrive at ${displayName(n)}`, arrow:'●', dir:''
   }));
 
-  return waypts.map((w,i)=>{
-    const n=w.n;
-    if(i===0) return {node:n, text:`Start at ${displayName(n)}`, arrow:'🟢', dir:''};
-    if(i===waypts.length-1) return {node:n, text:`Arrive at ${displayName(n)}`, arrow:'🔴', dir:''};
-    const prev=waypts[i-1].n, next=waypts[i+1].n;
-    const dir=cardDir(prev,n);
-    const turn=turnType(prev,n,next);
-    const dLabel=dir.charAt(0).toUpperCase()+dir.slice(1);
-    const arrow=DIR_ARROW[dir]||'→';
-    const text=turn==='straight'?`Continue ${dLabel} — ${displayName(n)}`:`${turn} at ${displayName(n)}`;
-    return {node:n, text, arrow, dir};
-  });
+  const steps = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    const isFirst = i === 0, isLast = i === nodes.length-1;
+    const hasName = !!n.name;
+
+    // Compute turn angle at this node
+    let turnAngle = 0, turnLabel = 'straight';
+    if (i > 0 && i < nodes.length-1) {
+      const prev=nodes[i-1], next=nodes[i+1];
+      const a1=Math.atan2(n.y-prev.y, n.x-prev.x);
+      const a2=Math.atan2(next.y-n.y, next.x-n.x);
+      let d=(a2-a1)*180/Math.PI;
+      while(d>180) d-=360; while(d<-180) d+=360;
+      turnAngle=Math.abs(d);
+      turnLabel=turnType(nodes[i-1], n, nodes[i+1]);
+    }
+    const isTurn = turnAngle > 30;
+
+    // Only include: start, end, named nodes, or junction turns
+    if (!isFirst && !isLast && !hasName && !isTurn) continue;
+
+    const dir = i > 0 ? cardDir(nodes[i-1], n) : '';
+    const dLabel = dir ? dir.charAt(0).toUpperCase()+dir.slice(1) : '';
+    const arrow = isFirst ? '🟢' : isLast ? '🔴' : (DIR_ARROW[dir]||'→');
+
+    let text;
+    if (isFirst)      text = `Start at ${displayName(n)}`;
+    else if (isLast)  text = `Arrive at ${displayName(n)}`;
+    else if (hasName && turnLabel !== 'straight') text = `${turnLabel} at ${displayName(n)}`;
+    else if (hasName) text = `Continue ${dLabel} — ${displayName(n)}`;
+    else if (isTurn)  text = `${turnLabel} (${dLabel})`;
+    else              text = `Continue ${dLabel}`;
+
+    steps.push({ node:n, text, arrow, dir });
+  }
+  return steps;
 }
 
 function cardDir(a,b) {
@@ -780,6 +880,10 @@ function updateStep() {
   document.getElementById('sp-next').disabled=G.stepIdx===tot-1;
   panTo(s.node); sched();
   if(G.view==='ar') updateAROverlay();
+  // Sync side panel highlight
+  const items=document.querySelectorAll('.rstep');
+  items.forEach((el,i)=>el.classList.toggle('active',i===G.stepIdx));
+  if(items[G.stepIdx]) items[G.stepIdx].scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 function prevStep(){if(G.stepIdx>0){G.stepIdx--;updateStep();}}
 function nextStep(){if(G.stepIdx<G.steps.length-1){G.stepIdx++;updateStep();}}
