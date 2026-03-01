@@ -274,7 +274,19 @@ body { display:flex; flex-direction:column; }
 
 <input type="file" id="img-file" accept="image/*" style="display:none" onchange="loadImg(event)">
 
+<!-- Graph data — auto-generated from pedway_graph.json -->
+<script src="assets/pedway_graph.js"></script>
+
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════
+function displayName(n) {
+  if (n.name) return n.name;
+  const type = n.type.charAt(0).toUpperCase() + n.type.slice(1);
+  return `${type}: x:${n.x} y:${n.y}`;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // Config
 // ═══════════════════════════════════════════════════════════════════
@@ -316,16 +328,14 @@ const G = {
 // ═══════════════════════════════════════════════════════════════════
 // Bootstrap
 // ═══════════════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', () => {
   G.canvas = document.getElementById('map-canvas');
   G.ctx    = G.canvas.getContext('2d');
 
-  try {
-    const r = await fetch('./pedway_graph.json');
-    if (!r.ok) throw 0;
-    bootGraph(await r.json());
-  } catch {
-    document.querySelector('#loading p').textContent = 'Could not auto-load pedway_graph.json.';
+  if (window.PEDWAY_GRAPH) {
+    bootGraph(window.PEDWAY_GRAPH);
+  } else {
+    document.querySelector('#loading p').textContent = 'assets/pedway_graph.js not found. Load the JSON manually.';
     document.getElementById('load-btn').style.display = 'block';
     document.querySelector('.spinner').style.display  = 'none';
   }
@@ -348,6 +358,20 @@ function bootGraph(data) {
   });
   document.getElementById('loading').style.display = 'none';
   resizeCanvas(); fitView(); draw(); bindCanvas();
+
+  // Auto-load map image from assets folder (try png then jpg)
+  function tryLoadImg(paths) {
+    if (!paths.length) return;
+    const img = new Image();
+    img.onload = () => {
+      G.mapImg = img;
+      document.getElementById('img-prompt').style.display = 'none';
+      sched();
+    };
+    img.onerror = () => tryLoadImg(paths.slice(1));
+    img.src = paths[0];
+  }
+  tryLoadImg(['assets/map.png','assets/map.jpg','assets/map.jpeg','assets/pedway.png','assets/pedway.jpg']);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -484,9 +508,10 @@ function draw() {
       const fs = Math.min(14, Math.max(8, 10/G.zoom));
       ctx.font=`${fs}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='bottom';
       const ly = n.y - r - 4;
-      ctx.strokeStyle='rgba(0,0,0,.85)'; ctx.lineWidth=3/G.zoom;
+      ctx.strokeStyle='rgba(0,0,0,.9)';
+      ctx.lineWidth = Math.min(3, 2.5/G.zoom);  // cap so it never overwhelms the fill
       ctx.lineJoin='round'; ctx.strokeText(n.name,n.x,ly);
-      ctx.fillStyle = onRoute ? '#90caf9' : G.mapImg ? '#111' : '#ddd';
+      ctx.fillStyle = onRoute ? '#90caf9' : '#fff';  // always white — outline provides contrast
       ctx.fillText(n.name, n.x, ly);
     }
   }
@@ -576,13 +601,13 @@ function te(e){
 function setPt(which, node) {
   if (which==='from') {
     G.fromNode=node;
-    document.getElementById('from-input').value=node.name||(node.type==='junction'?'Junction':'');
+    document.getElementById('from-input').value=displayName(node);
     document.getElementById('from-x').style.display='block';
     G.activeInput='to';
     document.getElementById('to-input').focus();
   } else {
     G.toNode=node;
-    document.getElementById('to-input').value=node.name||(node.type==='junction'?'Junction':'');
+    document.getElementById('to-input').value=displayName(node);
     document.getElementById('to-x').style.display='block';
     G.activeInput='from';
     document.getElementById('to-input').blur();
@@ -656,19 +681,19 @@ function buildSteps(path) {
     if(n.name||i===0||i===path.length-1) waypts.push({n,i});
   }
   if(waypts.length<2) return waypts.map((w,i)=>({
-    node:w.n, text:i===0?`Start at ${w.n.name||'start'}`:(`Arrive at ${w.n.name||'destination'}`), arrow:'●', dir:''
+    node:w.n, text:i===0?`Start at ${displayName(w.n)}`:(`Arrive at ${displayName(w.n)}`), arrow:'●', dir:''
   }));
 
   return waypts.map((w,i)=>{
     const n=w.n;
-    if(i===0) return {node:n, text:`Start at ${n.name||'your location'}`, arrow:'🟢', dir:''};
-    if(i===waypts.length-1) return {node:n, text:`Arrive at ${n.name||'your destination'}`, arrow:'🔴', dir:''};
+    if(i===0) return {node:n, text:`Start at ${displayName(n)}`, arrow:'🟢', dir:''};
+    if(i===waypts.length-1) return {node:n, text:`Arrive at ${displayName(n)}`, arrow:'🔴', dir:''};
     const prev=waypts[i-1].n, next=waypts[i+1].n;
     const dir=cardDir(prev,n);
     const turn=turnType(prev,n,next);
     const dLabel=dir.charAt(0).toUpperCase()+dir.slice(1);
     const arrow=DIR_ARROW[dir]||'→';
-    const text=turn==='straight'?`Continue ${dLabel} — ${n.name}`:`${turn} at ${n.name}`;
+    const text=turn==='straight'?`Continue ${dLabel} — ${displayName(n)}`:`${turn} at ${displayName(n)}`;
     return {node:n, text, arrow, dir};
   });
 }
@@ -730,7 +755,7 @@ function setFilter(type) {
 // ═══════════════════════════════════════════════════════════════════
 function showTip(n,x,y){
   const el=document.getElementById('node-tooltip');
-  el.innerHTML=`<strong>${n.name||'Junction'}</strong><br><span style="color:var(--muted);font-size:11px">${n.type}</span>`;
+  el.innerHTML=`<strong>${displayName(n)}</strong><br><span style="color:var(--muted);font-size:11px">${n.type}</span>`;
   el.style.display='block'; moveTip(x,y);
 }
 function moveTip(x,y){
@@ -748,14 +773,15 @@ function onSInput(which){
   const inp=document.getElementById(which+'-input');
   const q=inp.value.trim().toLowerCase();
   if(!q||!G.graph){closeDrop();return;}
-  const hits=G.graph.nodes.filter(n=>n.name&&n.name.toLowerCase().includes(q)).slice(0,9);
+  const hits=G.graph.nodes.filter(n=>displayName(n).toLowerCase().includes(q)).slice(0,9);
   if(!hits.length){closeDrop();return;}
   const r=inp.getBoundingClientRect();
   const dd=document.getElementById('autocomplete');
   dd.style.cssText=`display:block;left:${r.left}px;top:${r.bottom+4}px;width:${r.width}px;`;
   dd.innerHTML=hits.map(n=>{
     const cfg=NCFG[n.type]||NCFG.junction;
-    const hl=n.name.replace(new RegExp('('+inp.value.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>');
+    const dname=displayName(n);
+    const hl=dname.replace(new RegExp('('+inp.value.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>');
     return `<div class="ac-item" onmousedown="pickAC('${which}','${n.id}')">
       <div class="ac-dot" style="background:${cfg.color}"></div>
       <span class="ac-name">${hl}</span>
