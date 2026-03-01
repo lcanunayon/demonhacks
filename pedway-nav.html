@@ -176,19 +176,30 @@ body { display:flex; flex-direction:column; }
 
 <!-- Search -->
 <div id="search-bar">
-  <div class="srow" id="from-row">
-    <div class="sdot from-sdot"></div>
-    <input class="sinput" id="from-input" type="text" placeholder="From — tap a dot or search…"
-      autocomplete="off" spellcheck="false"
-      oninput="onSInput('from')" onfocus="onSFocus('from')" onblur="onSBlur()">
-    <button class="xclear" id="from-x" onclick="clearPt('from')">×</button>
-  </div>
-  <div class="srow" id="to-row">
-    <div class="sdot to-sdot"></div>
-    <input class="sinput" id="to-input" type="text" placeholder="To — tap a dot or search…"
-      autocomplete="off" spellcheck="false"
-      oninput="onSInput('to')" onfocus="onSFocus('to')" onblur="onSBlur()">
-    <button class="xclear" id="to-x" onclick="clearPt('to')">×</button>
+  <div style="display:flex;gap:6px;align-items:stretch">
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div class="srow" id="from-row">
+        <div class="sdot from-sdot"></div>
+        <input class="sinput" id="from-input" type="text" placeholder="From — tap a dot or search…"
+          autocomplete="off" spellcheck="false"
+          oninput="onSInput('from')" onfocus="onSFocus('from')" onblur="onSBlur()">
+        <button class="xclear" id="from-x" onclick="clearPt('from')">×</button>
+      </div>
+      <div class="srow" id="to-row">
+        <div class="sdot to-sdot"></div>
+        <input class="sinput" id="to-input" type="text" placeholder="To — tap a dot or search…"
+          autocomplete="off" spellcheck="false"
+          oninput="onSInput('to')" onfocus="onSFocus('to')" onblur="onSBlur()">
+        <button class="xclear" id="to-x" onclick="clearPt('to')">×</button>
+      </div>
+    </div>
+    <button id="reset-btn" onclick="resetAll()" disabled
+      title="Clear route"
+      style="flex-shrink:0;padding:0 14px;background:var(--surf2);border:1.5px solid var(--border);
+             border-radius:9px;color:var(--muted);font-size:12px;font-weight:600;cursor:not-allowed;
+             transition:all .15s;white-space:nowrap;opacity:.4">
+      Reset
+    </button>
   </div>
 </div>
 
@@ -410,7 +421,8 @@ function nodeAt(cx,cy) {
   const p=imgXY(cx,cy), th=20/G.zoom;
   let best=null, bd=th;
   for (const n of G.graph.nodes) {
-    if (G.filter!=='all' && n.type!==G.filter && n.type!=='junction') continue;
+    if (n.type==='junction') continue;  // junctions are routing-only, not user-selectable
+    if (G.filter!=='all' && n.type!==G.filter) continue;
     const d=Math.hypot(n.x-p.x, n.y-p.y);
     if (d<bd) { bd=d; best=n; }
   }
@@ -488,6 +500,10 @@ function draw() {
     if (onRoute && !isFrom && !isTo) { ctx.shadowColor='#2196f3'; ctx.shadowBlur=10; }
     if (isCur && !isFrom && !isTo)   { ctx.shadowColor='#64b5f6'; ctx.shadowBlur=16; }
 
+    // Junctions are near-invisible — they exist only for routing
+    const isJunction = n.type === 'junction';
+    ctx.globalAlpha = isJunction && !onRoute ? 0.08 : 1;
+
     ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2);
     ctx.fillStyle = isFrom ? '#4caf50' : isTo ? '#f44336' : onRoute ? '#2196f3' : cfg.color;
     ctx.fill(); ctx.shadowBlur=0;
@@ -495,6 +511,7 @@ function draw() {
     ctx.strokeStyle = isHov||isFrom||isTo||onRoute ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.2)';
     ctx.lineWidth = isFrom||isTo ? 2.5 : 1;
     ctx.stroke();
+    ctx.globalAlpha = 1;
 
     if (isFrom||isTo) {
       const lbl = isFrom ? 'A' : 'B';
@@ -613,6 +630,7 @@ function setPt(which, node) {
     document.getElementById('to-input').blur();
   }
   closeDrop();
+  updateResetBtn();
   if (G.fromNode&&G.toNode) route();
   else sched();
 }
@@ -629,7 +647,31 @@ function clearPt(which) {
   }
   G.route=[]; G.routeEdges=new Set(); G.steps=[];
   document.getElementById('step-panel').style.display='none';
+  updateResetBtn();
   sched();
+}
+
+function resetAll() {
+  G.fromNode=null; G.toNode=null;
+  G.route=[]; G.routeEdges=new Set(); G.steps=[];
+  document.getElementById('from-input').value='';
+  document.getElementById('to-input').value='';
+  document.getElementById('from-x').style.display='none';
+  document.getElementById('to-x').style.display='none';
+  document.getElementById('step-panel').style.display='none';
+  G.activeInput='from';
+  updateResetBtn();
+  sched();
+}
+
+function updateResetBtn() {
+  const btn = document.getElementById('reset-btn');
+  const hasAny = G.fromNode || G.toNode;
+  btn.disabled = !hasAny;
+  btn.style.opacity    = hasAny ? '1'   : '0.4';
+  btn.style.color      = hasAny ? 'var(--to)' : 'var(--muted)';
+  btn.style.borderColor= hasAny ? 'var(--to)' : 'var(--border)';
+  btn.style.cursor     = hasAny ? 'pointer'   : 'not-allowed';
 }
 
 // ═══════════════════════════════════════════════════════════════════
