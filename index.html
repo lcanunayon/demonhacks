@@ -187,6 +187,18 @@ body { display:flex; flex-direction:column; }
 /* autocomplete scrollbar */
 #autocomplete::-webkit-scrollbar { width:4px; }
 #autocomplete::-webkit-scrollbar-thumb { background:#555; border-radius:2px; }
+
+/* ── AR mini-map ── */
+#ar-minimap-wrap { position:absolute; top:12px; right:12px; width:160px; height:160px;
+  background:rgba(10,12,16,0.82); border:1.5px solid rgba(255,255,255,0.18);
+  border-radius:10px; overflow:hidden; z-index:10; touch-action:none; cursor:grab;
+  min-width:80px; min-height:80px; display:none; box-shadow:0 4px 18px rgba(0,0,0,.55); }
+#ar-minimap-wrap.mm-visible { display:block; }
+#ar-minimap { width:100%; height:100%; display:block; }
+#ar-minimap-resize { position:absolute; bottom:0; right:0; width:22px; height:22px;
+  cursor:se-resize; display:flex; align-items:flex-end; justify-content:flex-end;
+  padding:3px; color:rgba(255,255,255,0.45); font-size:14px; line-height:1; z-index:11;
+  user-select:none; }
 </style>
 </head>
 <body>
@@ -296,6 +308,10 @@ body { display:flex; flex-direction:column; }
       <div style="font-size:40px">🗺</div>
       <p>Set a From and To in Map view<br>to enable AR navigation</p>
     </div>
+    <div id="ar-minimap-wrap">
+      <canvas id="ar-minimap"></canvas>
+      <div id="ar-minimap-resize">⊿</div>
+    </div>
   </div>
 
 </div>
@@ -394,6 +410,7 @@ const G = {
 window.addEventListener('DOMContentLoaded', () => {
   G.canvas = document.getElementById('map-canvas');
   G.ctx    = G.canvas.getContext('2d');
+  initMinimapHandlers();
 
   if (window.PEDWAY_GRAPH) {
     bootGraph(window.PEDWAY_GRAPH);
@@ -976,6 +993,7 @@ function switchView(v) {
     const hasRoute=G.steps.length>0;
     document.getElementById('ar-no-route').style.display=hasRoute?'none':'block';
     document.getElementById('ar-overlay').style.display =hasRoute?'block':'none';
+    document.getElementById('ar-minimap-wrap').classList.toggle('mm-visible',hasRoute);
     if(hasRoute){
       // Auto-advance to first step that has a real direction
       if(!G.steps[G.stepIdx]?.dir) {
@@ -985,6 +1003,7 @@ function switchView(v) {
       updateAROverlay();resizeARCanvas();
     }
   } else {
+    document.getElementById('ar-minimap-wrap').classList.remove('mm-visible');
     resizeCanvas(); sched();
   }
 }
@@ -1011,6 +1030,7 @@ function resizeARCanvas(){
 
 function arLoop(){
   drawARArrow();
+  drawMinimap();
   if(G.view==='ar') G.arRaf=requestAnimationFrame(arLoop);
 }
 
@@ -1042,6 +1062,131 @@ function drawARArrow(){
   const pr=r*(1+t*.6), pa=.5*(1-t);
   ctx.beginPath(); ctx.arc(cx,cy,pr,0,Math.PI*2);
   ctx.strokeStyle=`rgba(33,150,243,${pa})`; ctx.lineWidth=2; ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Mini-map
+// ═══════════════════════════════════════════════════════════════════
+function drawMinimap() {
+  const wrap = document.getElementById('ar-minimap-wrap');
+  const c    = document.getElementById('ar-minimap');
+  if (!G.graph || !G.route.length || !wrap.offsetWidth) return;
+  // Keep canvas pixels in sync with the CSS-resized container
+  if (c.width !== wrap.offsetWidth || c.height !== wrap.offsetHeight) {
+    c.width = wrap.offsetWidth; c.height = wrap.offsetHeight;
+  }
+  const ctx = c.getContext('2d'), W = c.width, H = c.height;
+  const rNodes = G.route.map(id => G.nodeMap[id]).filter(Boolean);
+  if (rNodes.length < 2) return;
+
+  // Bounding box of route + padding
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  for (const n of rNodes) { x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x);y1=Math.max(y1,n.y); }
+  const span=Math.max(x1-x0,y1-y0,50), pad=span*0.22+20;
+  x0-=pad; y0-=pad; x1+=pad; y1+=pad;
+  const sc=Math.min(W/(x1-x0), H/(y1-y0));
+  const ox=(W-(x1-x0)*sc)/2-x0*sc, oy=(H-(y1-y0)*sc)/2-y0*sc;
+  const mm=(x,y)=>({x:x*sc+ox, y:y*sc+oy});
+
+  ctx.clearRect(0,0,W,H);
+
+  // Cropped map image
+  if (G.mapImg) {
+    const iw=G.graph.meta.imageWidth, ih=G.graph.meta.imageHeight;
+    const sx=Math.max(0,x0), sy=Math.max(0,y0);
+    const sw=Math.min(iw,x1)-sx, sh=Math.min(ih,y1)-sy;
+    if (sw>0&&sh>0) {
+      const dp=mm(sx,sy);
+      ctx.globalAlpha=0.65;
+      ctx.drawImage(G.mapImg,sx,sy,sw,sh, dp.x,dp.y,sw*sc,sh*sc);
+      ctx.globalAlpha=1;
+    }
+  } else {
+    ctx.fillStyle='#0a0d11'; ctx.fillRect(0,0,W,H);
+  }
+
+  // Route edges
+  ctx.strokeStyle='rgba(33,150,243,0.75)'; ctx.lineWidth=1.5;
+  for (let i=0;i<rNodes.length-1;i++) {
+    const a=rNodes[i],b=rNodes[i+1],pa=mm(a.x,a.y),pb=mm(b.x,b.y);
+    ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke();
+  }
+
+  // Route nodes (small dots)
+  for (const n of rNodes) {
+    const p=mm(n.x,n.y);
+    ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2);
+    ctx.fillStyle='#2196f3'; ctx.fill();
+  }
+
+  // From / To markers
+  for (const [node,col] of [[G.fromNode,'#4caf50'],[G.toNode,'#f44336']]) {
+    if (!node) continue;
+    const p=mm(node.x,node.y);
+    ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Current step — highlighted node + direction arrow
+  const s=G.steps[G.stepIdx];
+  if (s?.node) {
+    const p=mm(s.node.x,s.node.y);
+    // Pulse ring
+    const t=(Date.now()%1000)/1000;
+    ctx.beginPath(); ctx.arc(p.x,p.y,7+t*7,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(100,181,246,${0.55*(1-t)})`; ctx.lineWidth=1.5; ctx.stroke();
+    // Highlighted dot
+    ctx.shadowColor='#2196f3'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2);
+    ctx.fillStyle='#64b5f6'; ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+    // Direction arrow pointing in travel direction
+    if (s.dir) {
+      const ang=(DIR_ANGLE[s.dir]??0)*Math.PI/180;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+      ctx.shadowColor='#2196f3'; ctx.shadowBlur=6;
+      ctx.beginPath();
+      ctx.moveTo(0,-16); ctx.lineTo(4,-8); ctx.lineTo(0,-11); ctx.lineTo(-4,-8);
+      ctx.closePath();
+      ctx.fillStyle='#fff'; ctx.fill(); ctx.shadowBlur=0;
+      ctx.restore();
+    }
+  }
+}
+
+function initMinimapHandlers() {
+  const wrap=document.getElementById('ar-minimap-wrap');
+  const rh  =document.getElementById('ar-minimap-resize');
+  let drag=null, rsz=null;
+
+  wrap.addEventListener('pointerdown', e => {
+    if (e.target===rh) return;
+    e.stopPropagation();
+    const r=wrap.getBoundingClientRect(), ar=document.getElementById('ar-view').getBoundingClientRect();
+    drag={sx:e.clientX,sy:e.clientY,ol:r.left-ar.left,ot:r.top-ar.top};
+    wrap.setPointerCapture(e.pointerId); wrap.style.cursor='grabbing';
+  });
+  wrap.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const ar=document.getElementById('ar-view').getBoundingClientRect();
+    const nl=Math.max(0,Math.min(ar.width -wrap.offsetWidth,  drag.ol+e.clientX-drag.sx));
+    const nt=Math.max(0,Math.min(ar.height-wrap.offsetHeight, drag.ot+e.clientY-drag.sy));
+    wrap.style.left=nl+'px'; wrap.style.top=nt+'px'; wrap.style.right='auto';
+  });
+  wrap.addEventListener('pointerup', ()=>{ drag=null; wrap.style.cursor='grab'; });
+
+  rh.addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    rsz={sx:e.clientX,sy:e.clientY,ow:wrap.offsetWidth,oh:wrap.offsetHeight};
+    rh.setPointerCapture(e.pointerId);
+  });
+  rh.addEventListener('pointermove', e => {
+    if (!rsz) return;
+    wrap.style.width =Math.max(80,Math.min(320,rsz.ow+e.clientX-rsz.sx))+'px';
+    wrap.style.height=Math.max(80,Math.min(320,rsz.oh+e.clientY-rsz.sy))+'px';
+  });
+  rh.addEventListener('pointerup', ()=>{ rsz=null; });
 }
 
 function updateAROverlay(){
