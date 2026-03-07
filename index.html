@@ -781,6 +781,7 @@ function toggleBottom() {
   const sp = document.getElementById('step-panel');
   if (G.bottomCollapsed) sp.style.display = 'none';
   else if (G.steps.length) sp.style.display = 'flex';
+  if (G.view==='ar') resizeARCanvas(); else resizeCanvas();
 }
 
 function updateResetBtn() {
@@ -941,15 +942,21 @@ function turnType(prev,cur,next) {
 // ═══════════════════════════════════════════════════════════════════
 function updateStep() {
   const panel=document.getElementById('step-panel');
-  if(!G.steps.length||G.bottomCollapsed){panel.style.display='none';return;}
-  panel.style.display='flex';
+  if(!G.steps.length){panel.style.display='none';return;}
   const s=G.steps[G.stepIdx], tot=G.steps.length;
-  document.getElementById('step-num').textContent=`Step ${G.stepIdx+1} of ${tot}`;
-  document.getElementById('step-txt').textContent=`${s.arrow}  ${s.text}`;
-  document.getElementById('step-sub').textContent=s.dir?`Facing ${s.dir}`:'';
-  document.getElementById('sp-prev').disabled=G.stepIdx===0;
-  document.getElementById('sp-next').disabled=G.stepIdx===tot-1;
+  // Step panel only when bottom is visible
+  if(!G.bottomCollapsed){
+    panel.style.display='flex';
+    document.getElementById('step-num').textContent=`Step ${G.stepIdx+1} of ${tot}`;
+    document.getElementById('step-txt').textContent=`${s.arrow}  ${s.text}`;
+    document.getElementById('step-sub').textContent=s.dir?`Facing ${s.dir}`:'';
+    document.getElementById('sp-prev').disabled=G.stepIdx===0;
+    document.getElementById('sp-next').disabled=G.stepIdx===tot-1;
+  } else {
+    panel.style.display='none';
+  }
   panTo(s.node); sched();
+  // Always update AR overlay regardless of bottom collapsed state
   if(G.view==='ar') updateAROverlay();
   // Sync side panel highlight
   const items=document.querySelectorAll('.rstep');
