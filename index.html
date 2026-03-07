@@ -26,13 +26,14 @@
 }
 html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  -webkit-tap-highlight-color:transparent; }
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none; touch-action:none; }
 body { display:flex; flex-direction:column; }
 
 /* ── Header ── */
 #header { height:80px; background:var(--surf); border-bottom:1px solid var(--border);
   display:flex; align-items:center; justify-content:space-between;
-  padding:0 12px; flex-shrink:0; z-index:10; position:relative; }
+  padding:0 12px; flex-shrink:0; z-index:20; position:relative; }
 #app-title { font-size:16px; font-weight:700; letter-spacing:-.3px; }
 #view-tabs { display:flex; background:var(--bg); border-radius:8px; padding:3px; gap:2px; }
 .vtab { padding:5px 16px; border:none; border-radius:6px; background:transparent;
@@ -42,7 +43,7 @@ body { display:flex; flex-direction:column; }
 /* ── Search bar ── */
 #search-bar { background:var(--surf); border-bottom:1px solid var(--border);
   padding:8px 10px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;
-  position:relative; z-index:9; }
+  position:relative; z-index:20; }
 .srow { display:flex; align-items:center; gap:8px; background:var(--surf2);
   border:1.5px solid var(--border); border-radius:9px; padding:0 10px; transition:border-color .15s; }
 .srow:focus-within { border-color:var(--accent); }
@@ -171,7 +172,7 @@ select.sinput optgroup { background:var(--surf2); color:var(--muted); font-size:
 #rp-close:hover { color:var(--text); }
 #rp-summary { padding:7px 14px; font-size:12px; color:var(--muted);
   border-bottom:1px solid var(--border); flex-shrink:0; }
-#rp-steps { flex:1; overflow-y:auto; }
+#rp-steps { flex:1; overflow-y:auto; touch-action:pan-y; }
 #rp-steps::-webkit-scrollbar { width:4px; }
 #rp-steps::-webkit-scrollbar-thumb { background:#444; border-radius:2px; }
 .rstep { display:flex; align-items:flex-start; gap:8px; padding:10px 12px;
@@ -426,6 +427,15 @@ window.addEventListener('DOMContentLoaded', () => {
   G.canvas = document.getElementById('map-canvas');
   G.ctx    = G.canvas.getContext('2d');
   initMinimapHandlers();
+
+  // Prevent iOS Safari from intercepting pinch gestures meant for the map
+  document.addEventListener('gesturestart',  e => e.preventDefault(), { passive:false });
+  document.addEventListener('gesturechange', e => e.preventDefault(), { passive:false });
+  document.addEventListener('gestureend',    e => e.preventDefault(), { passive:false });
+  document.addEventListener('touchmove', e => {
+    // Block multi-touch scroll/zoom at the document level; canvas handles it
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive:false });
 
   if (window.PEDWAY_GRAPH) {
     bootGraph(window.PEDWAY_GRAPH);
