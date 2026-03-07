@@ -158,11 +158,11 @@ select.sinput optgroup { background:var(--surf2); color:var(--muted); font-size:
 #step-sub  { font-size:11px; color:var(--accent); margin-top:1px; }
 
 /* ── Route side panel ── */
-#route-panel { position:fixed; top:80px; right:0; bottom:0; width:280px;
+#route-panel { position:fixed; top:0; right:0; bottom:0; width:280px;
   background:var(--surf); border-left:1px solid var(--border);
   display:flex; flex-direction:column; z-index:15;
   transform:translateX(100%); transition:transform .25s ease;
-  box-shadow:-4px 0 24px rgba(0,0,0,.55); }
+  box-shadow:-4px 0 24px rgba(0,0,0,.55); touch-action:pan-y; }
 #route-panel.open { transform:translateX(0); }
 #rp-hdr { display:flex; align-items:center; justify-content:space-between;
   padding:12px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
@@ -856,7 +856,10 @@ function openRoutePanel() {
   document.getElementById('rp-title').textContent=`Route — ${G.steps.length} steps`;
   document.getElementById('rp-summary').textContent=`~${distLabel} total`;
   renderRouteSteps();
-  document.getElementById('route-panel').classList.add('open');
+  const rp = document.getElementById('route-panel');
+  const sb = document.getElementById('search-bar');
+  rp.style.top = (sb.getBoundingClientRect().bottom) + 'px';
+  rp.classList.add('open');
 }
 
 function renderRouteSteps() {
