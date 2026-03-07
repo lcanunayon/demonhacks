@@ -52,9 +52,21 @@ body { display:flex; flex-direction:column; }
 .sinput { flex:1; border:none; background:transparent; color:var(--text);
   font-size:14px; padding:9px 0; outline:none; min-width:0; }
 .sinput::placeholder { color:var(--muted); }
+select.sinput { appearance:none; -webkit-appearance:none; cursor:pointer;
+  padding:9px 4px 9px 0; }
+select.sinput option { background:var(--surf); color:var(--text); }
+select.sinput optgroup { background:var(--surf2); color:var(--muted); font-size:11px; }
 .xclear { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;
   padding:0 2px; line-height:1; display:none; }
 .xclear:hover { color:var(--text); }
+
+/* ── Bottom toggle ── */
+#bottom-toggle { height:22px; background:var(--surf); border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  cursor:pointer; user-select:none; }
+#bottom-toggle:hover { background:var(--surf2); }
+#bottom-arrow { font-size:10px; color:var(--muted); transition:transform .2s; }
+#bottom-arrow.up { transform:rotate(180deg); }
 
 /* ── Autocomplete ── */
 #autocomplete { position:fixed; background:var(--surf); border:1px solid var(--border);
@@ -232,16 +244,16 @@ body { display:flex; flex-direction:column; }
     <div style="flex:1;display:flex;flex-direction:column;gap:6px">
       <div class="srow" id="from-row">
         <div class="sdot from-sdot"></div>
-        <input class="sinput" id="from-input" type="text" placeholder="From — tap a dot or search…"
-          autocomplete="off" spellcheck="false"
-          oninput="onSInput('from')" onfocus="onSFocus('from')" onblur="onSBlur()">
+        <select class="sinput" id="from-input" onchange="onSelectPt('from')">
+          <option value="">From — select a location…</option>
+        </select>
         <button class="xclear" id="from-x" onclick="clearPt('from')">×</button>
       </div>
       <div class="srow" id="to-row">
         <div class="sdot to-sdot"></div>
-        <input class="sinput" id="to-input" type="text" placeholder="To — tap a dot or search…"
-          autocomplete="off" spellcheck="false"
-          oninput="onSInput('to')" onfocus="onSFocus('to')" onblur="onSBlur()">
+        <select class="sinput" id="to-input" onchange="onSelectPt('to')">
+          <option value="">To — select a location…</option>
+        </select>
         <button class="xclear" id="to-x" onclick="clearPt('to')">×</button>
       </div>
     </div>
@@ -254,9 +266,6 @@ body { display:flex; flex-direction:column; }
     </button>
   </div>
 </div>
-
-<!-- Autocomplete -->
-<div id="autocomplete"></div>
 
 <!-- Views -->
 <div id="view-area">
@@ -314,6 +323,11 @@ body { display:flex; flex-direction:column; }
     </div>
   </div>
 
+</div>
+
+<!-- Bottom toggle -->
+<div id="bottom-toggle" onclick="toggleBottom()">
+  <span id="bottom-arrow">▼</span>
 </div>
 
 <!-- Filter bar -->
@@ -401,6 +415,7 @@ const G = {
   route:[], routeEdges:new Set(), steps:[], stepIdx:0,
   view:'map', filter:'all',
   hovered:null, activeInput:'from',
+  bottomCollapsed:false,
   blurTmr:null, camStream:null, arRaf:null,
 };
 
@@ -438,6 +453,7 @@ function bootGraph(data) {
   });
   document.getElementById('loading').style.display = 'none';
   resizeCanvas(); fitView(); draw(); bindCanvas();
+  populateSelects();
 
   // Auto-load map image from assets folder (try png then jpg)
   function tryLoadImg(paths) {
@@ -687,18 +703,15 @@ function te(e){
 function setPt(which, node) {
   if (which==='from') {
     G.fromNode=node;
-    document.getElementById('from-input').value=displayName(node);
+    document.getElementById('from-input').value=node.id;
     document.getElementById('from-x').style.display='block';
     G.activeInput='to';
-    document.getElementById('to-input').focus();
   } else {
     G.toNode=node;
-    document.getElementById('to-input').value=displayName(node);
+    document.getElementById('to-input').value=node.id;
     document.getElementById('to-x').style.display='block';
     G.activeInput='from';
-    document.getElementById('to-input').blur();
   }
-  closeDrop();
   updateResetBtn();
   if (G.fromNode&&G.toNode) route();
   else sched();
@@ -733,6 +746,41 @@ function resetAll() {
   closeRoutePanel();
   updateResetBtn();
   sched();
+}
+
+function onSelectPt(which) {
+  const id = document.getElementById(which+'-input').value;
+  if (!id) { clearPt(which); return; }
+  const n = G.nodeMap[id]; if (!n) return;
+  setPt(which, n); panTo(n); sched();
+}
+
+function populateSelects() {
+  const TYPE_ORDER = ['exit','transit','landmark','restaurant','retail','restroom','parking'];
+  const TYPE_LABEL = {exit:'Exits',transit:'Transit',landmark:'Buildings',
+    restaurant:'Food',retail:'Shops',restroom:'Restrooms',parking:'Parking'};
+  const groups = {};
+  TYPE_ORDER.forEach(t => groups[t]=[]);
+  G.graph.nodes
+    .filter(n => n.type !== 'junction')
+    .sort((a,b) => displayName(a).localeCompare(displayName(b)))
+    .forEach(n => { if (groups[n.type]) groups[n.type].push(n); });
+  const opts = '<option value="">— Select a location —</option>' +
+    TYPE_ORDER.map(t => groups[t].length
+      ? `<optgroup label="${TYPE_LABEL[t]}">${groups[t].map(n =>
+          `<option value="${n.id}">${displayName(n)}</option>`).join('')}</optgroup>`
+      : '').join('');
+  document.getElementById('from-input').innerHTML = opts;
+  document.getElementById('to-input').innerHTML   = opts;
+}
+
+function toggleBottom() {
+  G.bottomCollapsed = !G.bottomCollapsed;
+  document.getElementById('bottom-arrow').classList.toggle('up', G.bottomCollapsed);
+  document.getElementById('filter-bar').style.display = G.bottomCollapsed ? 'none' : '';
+  const sp = document.getElementById('step-panel');
+  if (G.bottomCollapsed) sp.style.display = 'none';
+  else if (G.steps.length) sp.style.display = 'flex';
 }
 
 function updateResetBtn() {
@@ -893,7 +941,7 @@ function turnType(prev,cur,next) {
 // ═══════════════════════════════════════════════════════════════════
 function updateStep() {
   const panel=document.getElementById('step-panel');
-  if(!G.steps.length){panel.style.display='none';return;}
+  if(!G.steps.length||G.bottomCollapsed){panel.style.display='none';return;}
   panel.style.display='flex';
   const s=G.steps[G.stepIdx], tot=G.steps.length;
   document.getElementById('step-num').textContent=`Step ${G.stepIdx+1} of ${tot}`;
@@ -937,36 +985,7 @@ function moveTip(x,y){
 }
 function hideTip(){document.getElementById('node-tooltip').style.display='none';}
 
-// ═══════════════════════════════════════════════════════════════════
-// Search / Autocomplete
-// ═══════════════════════════════════════════════════════════════════
-function onSFocus(which){G.activeInput=which;clearTimeout(G.blurTmr);onSInput(which);}
-function onSBlur(){G.blurTmr=setTimeout(closeDrop,200);}
-function onSInput(which){
-  const inp=document.getElementById(which+'-input');
-  const q=inp.value.trim().toLowerCase();
-  if(!q||!G.graph){closeDrop();return;}
-  const hits=G.graph.nodes.filter(n=>displayName(n).toLowerCase().includes(q)).slice(0,9);
-  if(!hits.length){closeDrop();return;}
-  const r=inp.getBoundingClientRect();
-  const dd=document.getElementById('autocomplete');
-  dd.style.cssText=`display:block;left:${r.left}px;top:${r.bottom+4}px;width:${r.width}px;`;
-  dd.innerHTML=hits.map(n=>{
-    const cfg=NCFG[n.type]||NCFG.junction;
-    const dname=displayName(n);
-    const hl=dname.replace(new RegExp('('+inp.value.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>');
-    return `<div class="ac-item" onmousedown="pickAC('${which}','${n.id}')">
-      <div class="ac-dot" style="background:${cfg.color}"></div>
-      <span class="ac-name">${hl}</span>
-      <span class="ac-kind">${n.type}</span>
-    </div>`;
-  }).join('');
-}
-function pickAC(which,id){
-  const n=G.nodeMap[id]; if(!n) return;
-  closeDrop(); setPt(which,n); panTo(n); sched();
-}
-function closeDrop(){document.getElementById('autocomplete').style.display='none';}
+function closeDrop(){} // no-op — kept because canvas click handlers call it
 
 // ═══════════════════════════════════════════════════════════════════
 // Map image upload
