@@ -258,14 +258,13 @@ select.sinput optgroup { background:var(--surf2); color:var(--muted); font-size:
         <button class="xclear" id="to-x" onclick="clearPt('to')">×</button>
       </div>
     </div>
-    <button id="reset-btn" onclick="resetAll()" disabled
-      title="Clear route"
-      style="flex-shrink:0;padding:0 14px;background:var(--surf2);border:1.5px solid var(--border);
-             border-radius:9px;color:var(--muted);font-size:12px;font-weight:600;cursor:not-allowed;
-             transition:all .15s;white-space:nowrap;opacity:.4">
-      Reset
-    </button>
   </div>
+  <button id="reset-btn" onclick="resetAll()" disabled
+    style="width:100%;margin-top:6px;padding:8px;background:var(--surf2);
+           border:1.5px solid var(--border);border-radius:9px;color:var(--muted);
+           font-size:13px;font-weight:600;cursor:not-allowed;transition:all .15s;opacity:.4">
+    Reset Route
+  </button>
 </div>
 
 <!-- Views -->
@@ -553,28 +552,51 @@ function draw() {
     for (let y=0;y<ih;y+=300){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(iw,y);ctx.stroke();}
   }
 
-  // Edges
+  // Non-route edges (thin, dim)
   for (const e of G.graph.edges) {
     const a=G.nodeMap[e.from], b=G.nodeMap[e.to]; if (!a||!b) continue;
     const key=`${e.from}|${e.to}`, key2=`${e.to}|${e.from}`;
-    const onRoute = G.routeEdges.has(key)||G.routeEdges.has(key2);
-    ctx.strokeStyle = onRoute ? 'rgba(33,150,243,.88)' : G.mapImg ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.14)';
-    ctx.lineWidth   = onRoute ? 5 : 1.5;
+    if (G.routeEdges.has(key)||G.routeEdges.has(key2)) continue;
+    ctx.strokeStyle = G.mapImg ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.14)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
   }
 
-  // Route direction chevrons
-  if (G.route.length>1) {
+  // Route edges — Google Maps style: dark border pass then bright fill pass
+  if (G.routeEdges.size > 0) {
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // Pass 1: dark border
+    ctx.strokeStyle = 'rgba(0,80,180,0.55)';
+    ctx.lineWidth = 18;
+    for (const e of G.graph.edges) {
+      const a=G.nodeMap[e.from], b=G.nodeMap[e.to]; if (!a||!b) continue;
+      const key=`${e.from}|${e.to}`, key2=`${e.to}|${e.from}`;
+      if (!G.routeEdges.has(key)&&!G.routeEdges.has(key2)) continue;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+    // Pass 2: bright blue fill
+    ctx.shadowColor='rgba(33,150,243,0.45)'; ctx.shadowBlur=12;
+    ctx.strokeStyle = '#2196f3';
+    ctx.lineWidth = 11;
+    for (const e of G.graph.edges) {
+      const a=G.nodeMap[e.from], b=G.nodeMap[e.to]; if (!a||!b) continue;
+      const key=`${e.from}|${e.to}`, key2=`${e.to}|${e.from}`;
+      if (!G.routeEdges.has(key)&&!G.routeEdges.has(key2)) continue;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+    ctx.shadowBlur=0; ctx.lineCap='butt'; ctx.lineJoin='miter';
+
+    // Direction chevrons on top of route
     for (let i=0;i<G.route.length-1;i++) {
       const a=G.nodeMap[G.route[i]], b=G.nodeMap[G.route[i+1]]; if(!a||!b) continue;
       const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
       const ang=Math.atan2(b.y-a.y, b.x-a.x);
-      const as=Math.max(3, 5/G.zoom);
+      const as=Math.max(4, 7/G.zoom);
       ctx.save(); ctx.translate(mx,my); ctx.rotate(ang);
       ctx.beginPath();
       ctx.moveTo(as,0); ctx.lineTo(-as,-as*.6); ctx.lineTo(-as*.3,0); ctx.lineTo(-as,as*.6);
       ctx.closePath();
-      ctx.fillStyle='rgba(33,150,243,.8)'; ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fill();
       ctx.restore();
     }
   }
