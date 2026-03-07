@@ -35,11 +35,15 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: cache-first for local files, network-first for external (fonts)
+// Fetch strategy:
+//   HTML files      → network-first  (always get latest deploy, fall back to cache offline)
+//   Assets/images   → cache-first    (stable files, fast load)
+//   External (CDN)  → network-first, silent fallback
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+  if (event.request.method !== 'GET') return;
 
-  // External requests (e.g. Google Fonts) — network first, fall through silently
+  // External requests — network only, silent failure
   if (url.origin !== self.location.origin) {
     event.respondWith(
       fetch(event.request).catch(() => new Response('', { status: 408 }))
@@ -47,19 +51,30 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Local files — cache first, then network, then cache update
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+  const isHTML = url.pathname.endsWith('.html') || url.pathname.endsWith('/') || url.pathname === '/';
 
-      return fetch(event.request).then(response => {
-        // Cache successful GET responses
-        if (event.request.method === 'GET' && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
+  if (isHTML) {
+    // Network-first: always try to fetch fresh HTML, fall back to cache when offline
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
-      });
-    })
-  );
+      }).catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first: serve assets instantly, update cache in background
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        const fetchAndCache = fetch(event.request).then(response => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        });
+        return cached || fetchAndCache;
+      })
+    );
+  }
 });
