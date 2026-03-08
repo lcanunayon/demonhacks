@@ -1058,20 +1058,22 @@ function switchView(v) {
   if(v==='ar'){
     const hasRoute=G.steps.length>0;
     const hasCam=!!G.camStream;
-    document.getElementById('ar-no-route').style.display = hasRoute          ? 'none'  : 'block';
-    document.getElementById('cam-prompt').style.display  = (hasRoute&&!hasCam)? 'block' : 'none';
-    document.getElementById('ar-overlay').style.display  = hasRoute          ? 'block' : 'none';
-    document.getElementById('ar-minimap-wrap').classList.toggle('mm-visible',hasRoute);
+    // Camera prompt always shown first if camera not yet started
+    document.getElementById('cam-prompt').style.display  = hasCam ? 'none'  : 'block';
+    // Once camera is running: show no-route message or navigation overlay
+    document.getElementById('ar-no-route').style.display = (hasCam&&!hasRoute) ? 'block' : 'none';
+    document.getElementById('ar-overlay').style.display  = (hasCam&&hasRoute)  ? 'block' : 'none';
+    document.getElementById('ar-minimap-wrap').classList.toggle('mm-visible', hasCam&&hasRoute);
     if(hasRoute){
       // Auto-advance to first step that has a real direction
       if(!G.steps[G.stepIdx]?.dir) {
         const first=G.steps.findIndex(s=>s.dir);
         if(first>=0) G.stepIdx=first;
       }
-      updateAROverlay(); resizeARCanvas();
+      if(hasCam) { updateAROverlay(); resizeARCanvas(); }
     }
     // Restart animation loop if camera is running (arLoop stops when leaving AR view)
-    if(G.camStream){ if(G.arRaf) cancelAnimationFrame(G.arRaf); arLoop(); }
+    if(hasCam){ if(G.arRaf) cancelAnimationFrame(G.arRaf); arLoop(); }
   } else {
     document.getElementById('ar-minimap-wrap').classList.remove('mm-visible');
     resizeCanvas(); sched();
@@ -1088,6 +1090,11 @@ async function startCam(){
     const vid=document.getElementById('camera');
     vid.srcObject=stream; vid.style.display='block';
     document.getElementById('cam-prompt').style.display='none';
+    const hasRoute=G.steps.length>0;
+    document.getElementById('ar-no-route').style.display = hasRoute ? 'none'  : 'block';
+    document.getElementById('ar-overlay').style.display  = hasRoute ? 'block' : 'none';
+    document.getElementById('ar-minimap-wrap').classList.toggle('mm-visible', hasRoute);
+    if(hasRoute) updateAROverlay();
     resizeARCanvas(); arLoop();
   } catch(err){alert('Camera not available: '+err.message);}
 }
@@ -1312,9 +1319,9 @@ function initMinimapHandlers() {
 
 function updateAROverlay(){
   const s=G.steps[G.stepIdx]; if(!s) return;
-  // Keep prompts in sync: show cam-prompt only when route exists but camera not yet started
+  // Sync panels: cam-prompt takes priority until camera is running
+  document.getElementById('cam-prompt').style.display='none';
   document.getElementById('ar-no-route').style.display='none';
-  document.getElementById('cam-prompt').style.display=G.camStream?'none':'block';
   document.getElementById('ar-overlay').style.display='block';
   const arrow=DIR_ARROW[s.dir]||'';
   const dir=s.dir?(s.dir.charAt(0).toUpperCase()+s.dir.slice(1)):'';
