@@ -867,8 +867,6 @@ function route() {
   G.stepIdx=0;
   updateStep();
   openRoutePanel();
-  // If already in AR view, make sure the minimap is visible again
-  if(G.view==='ar') document.getElementById('ar-minimap-wrap').classList.add('mm-visible');
   sched();
 }
 
@@ -1068,8 +1066,10 @@ function switchView(v) {
         const first=G.steps.findIndex(s=>s.dir);
         if(first>=0) G.stepIdx=first;
       }
-      updateAROverlay();resizeARCanvas();
+      updateAROverlay(); resizeARCanvas();
     }
+    // Restart animation loop if camera is running (arLoop stops when leaving AR view)
+    if(G.camStream){ if(G.arRaf) cancelAnimationFrame(G.arRaf); arLoop(); }
   } else {
     document.getElementById('ar-minimap-wrap').classList.remove('mm-visible');
     resizeCanvas(); sched();
@@ -1180,10 +1180,11 @@ function drawMinimap() {
   if (!G.graph || !G.route.length) {
     // Clear canvas and hide when no route (e.g. after reset)
     wrap.classList.remove('mm-visible');
-    const ctx2 = c.getContext('2d');
-    ctx2.clearRect(0, 0, c.width, c.height);
+    c.getContext('2d').clearRect(0, 0, c.width, c.height);
     return;
   }
+  // Ensure visible whenever there's a route and we're in AR view
+  if (G.view === 'ar') wrap.classList.add('mm-visible');
   if (!wrap.offsetWidth) return;
   // Keep canvas pixels in sync with the CSS-resized container
   if (c.width !== wrap.offsetWidth || c.height !== wrap.offsetHeight) {
