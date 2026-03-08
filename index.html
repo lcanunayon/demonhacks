@@ -1100,41 +1100,54 @@ function arLoop(){
   if(G.view==='ar') G.arRaf=requestAnimationFrame(arLoop);
 }
 
+// Returns 'left', 'right', 'straight', or 'uturn' relative to fromDir→toDir
+function getRelTurn(fromDir, toDir) {
+  const ORD=['north','northeast','east','southeast','south','southwest','west','northwest'];
+  const fi=ORD.indexOf(fromDir), ti=ORD.indexOf(toDir);
+  if(fi<0||ti<0) return 'straight';
+  const diff=(ti-fi+8)%8;
+  if(diff===0) return 'straight';
+  if(diff<=3)  return 'right';
+  if(diff===4) return 'uturn';
+  return 'left';
+}
+
 function drawARArrow(){
   const c=document.getElementById('ar-canvas');
   const ctx=c.getContext('2d');
   ctx.clearRect(0,0,c.width,c.height);
-  const s=G.steps[G.stepIdx]; if(!s||!s.dir) return;
+  const s=G.steps[G.stepIdx]; if(!s) return;
   const cx=c.width/2, cy=c.height*0.38;
   const size=Math.min(c.width,c.height)*0.30;
 
+  // Sprite sheet layout:
+  //   top-left  = right arrow (east)    top-right = down arrow (south)
+  //   bot-left  = left arrow  (west)    bot-right = up arrow   (north)
+  // Big AR arrow: only show LEFT / RIGHT based on relative turn direction
+  const next=G.steps[G.stepIdx+1];
+  const turn = (s.dir && next?.dir) ? getRelTurn(s.dir, next.dir) : 'straight';
+  // Map turn to sprite key: right→east, left→west, straight/uturn→north (forward)
+  const spriteKey = turn==='right' ? 'east' : turn==='left' ? 'west' : 'north';
+
   if(G.arrowImg && G.arrowImg.complete && G.arrowImg.naturalWidth>0){
-    // Sprite sheet layout:
-    //   top-left  = right arrow (east)    top-right = down arrow (south)
-    //   bot-left  = left arrow  (west)    bot-right = up arrow   (north)
     const iw=G.arrowImg.naturalWidth, ih=G.arrowImg.naturalHeight;
     const qw=iw/2, qh=ih/2;
     const sp={
-      north:     {sx:qw, sy:qh, r:0},
-      south:     {sx:qw, sy:0,  r:0},
-      east:      {sx:0,  sy:0,  r:0},
-      west:      {sx:0,  sy:qh, r:0},
-      northeast: {sx:0,  sy:0,  r:-Math.PI/4},  // east rotated 45° CCW
-      southeast: {sx:0,  sy:0,  r: Math.PI/4},  // east rotated 45° CW
-      southwest: {sx:0,  sy:qh, r: Math.PI/4},  // west rotated 45° CW
-      northwest: {sx:0,  sy:qh, r:-Math.PI/4},  // west rotated 45° CCW
+      north:{sx:qw, sy:qh},   // up arrow
+      east: {sx:0,  sy:0 },   // right arrow
+      west: {sx:0,  sy:qh},   // left arrow
     };
-    const d=sp[s.dir]||sp.north;
+    const d=sp[spriteKey];
     ctx.save();
-    ctx.translate(cx,cy); ctx.rotate(d.r);
+    ctx.translate(cx,cy);
     ctx.shadowColor='rgba(0,0,0,0.65)'; ctx.shadowBlur=22;
     ctx.drawImage(G.arrowImg, d.sx, d.sy, qw, qh, -size/2, -size/2, size, size);
     ctx.restore();
   } else {
     // Fallback: drawn arrow
-    const angRad=(DIR_ANGLE[s.dir]??0)*Math.PI/180;
+    const fallbackAng = spriteKey==='east' ? Math.PI/2 : spriteKey==='west' ? -Math.PI/2 : 0;
     const r=size*0.5, aw=r*.38, ah=r;
-    ctx.save(); ctx.translate(cx,cy); ctx.rotate(angRad);
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(fallbackAng);
     ctx.shadowColor='#2196f3'; ctx.shadowBlur=28;
     ctx.beginPath();
     ctx.moveTo(0,-ah);
@@ -1233,9 +1246,10 @@ function drawMinimap() {
     ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2);
     ctx.fillStyle='#64b5f6'; ctx.fill(); ctx.shadowBlur=0;
     ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-    // Direction arrow pointing in travel direction
-    if (s.dir) {
-      const ang=(DIR_ANGLE[s.dir]??0)*Math.PI/180;
+    // Direction arrow pointing toward next step (where to go, not where you came from)
+    const nextStepDir = G.steps[G.stepIdx+1]?.dir || s.dir;
+    if (nextStepDir) {
+      const ang=(DIR_ANGLE[nextStepDir]??0)*Math.PI/180;
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
       ctx.shadowColor='#2196f3'; ctx.shadowBlur=6;
       ctx.beginPath();
