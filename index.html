@@ -126,7 +126,7 @@ select.sinput optgroup { background:var(--surf2); color:var(--muted); font-size:
 #ar-nav-row button:disabled { opacity:.3; cursor:not-allowed; }
 #ar-prog { color:rgba(255,255,255,.55); font-size:12px; text-align:center; min-width:50px; }
 #cam-prompt { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  text-align:center; color:rgba(255,255,255,.65); z-index:5; }
+  text-align:center; color:rgba(255,255,255,.65); z-index:5; display:none; }
 #cam-prompt p { margin-top:8px; font-size:14px; }
 #cam-prompt button { margin-top:14px; padding:10px 22px; background:var(--accent);
   border:none; border-radius:9px; color:#fff; font-size:14px; cursor:pointer; }
@@ -1057,8 +1057,10 @@ function switchView(v) {
   document.getElementById('tab-ar').classList.toggle('active', v==='ar');
   if(v==='ar'){
     const hasRoute=G.steps.length>0;
-    document.getElementById('ar-no-route').style.display=hasRoute?'none':'block';
-    document.getElementById('ar-overlay').style.display =hasRoute?'block':'none';
+    const hasCam=!!G.camStream;
+    document.getElementById('ar-no-route').style.display = hasRoute          ? 'none'  : 'block';
+    document.getElementById('cam-prompt').style.display  = (hasRoute&&!hasCam)? 'block' : 'none';
+    document.getElementById('ar-overlay').style.display  = hasRoute          ? 'block' : 'none';
     document.getElementById('ar-minimap-wrap').classList.toggle('mm-visible',hasRoute);
     if(hasRoute){
       // Auto-advance to first step that has a real direction
@@ -1310,6 +1312,10 @@ function initMinimapHandlers() {
 
 function updateAROverlay(){
   const s=G.steps[G.stepIdx]; if(!s) return;
+  // Keep prompts in sync: show cam-prompt only when route exists but camera not yet started
+  document.getElementById('ar-no-route').style.display='none';
+  document.getElementById('cam-prompt').style.display=G.camStream?'none':'block';
+  document.getElementById('ar-overlay').style.display='block';
   const arrow=DIR_ARROW[s.dir]||'';
   const dir=s.dir?(s.dir.charAt(0).toUpperCase()+s.dir.slice(1)):'';
   document.getElementById('ar-dir-label').textContent=s.dir?`${arrow} Facing ${dir}`:s.arrow||'';
