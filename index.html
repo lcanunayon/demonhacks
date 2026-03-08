@@ -1175,7 +1175,14 @@ function drawARArrow(){
 function drawMinimap() {
   const wrap = document.getElementById('ar-minimap-wrap');
   const c    = document.getElementById('ar-minimap');
-  if (!G.graph || !G.route.length || !wrap.offsetWidth) return;
+  if (!G.graph || !G.route.length) {
+    // Clear canvas and hide when no route (e.g. after reset)
+    wrap.classList.remove('mm-visible');
+    const ctx2 = c.getContext('2d');
+    ctx2.clearRect(0, 0, c.width, c.height);
+    return;
+  }
+  if (!wrap.offsetWidth) return;
   // Keep canvas pixels in sync with the CSS-resized container
   if (c.width !== wrap.offsetWidth || c.height !== wrap.offsetHeight) {
     c.width = wrap.offsetWidth; c.height = wrap.offsetHeight;
@@ -1249,7 +1256,10 @@ function drawMinimap() {
     // Direction arrow pointing toward next step (where to go, not where you came from)
     const nextStepDir = G.steps[G.stepIdx+1]?.dir || s.dir;
     if (nextStepDir) {
-      const ang=(DIR_ANGLE[nextStepDir]??0)*Math.PI/180;
+      // Compute angle directly from 8-direction order (north=0°, clockwise 45° steps)
+      // so the UP-pointing triangle rotates correctly to match the map
+      const ORD8=['north','northeast','east','southeast','south','southwest','west','northwest'];
+      const ang = (ORD8.indexOf(nextStepDir) * 45) * Math.PI / 180;
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
       ctx.shadowColor='#2196f3'; ctx.shadowBlur=6;
       ctx.beginPath();
