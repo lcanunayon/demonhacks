@@ -867,6 +867,8 @@ function route() {
   G.stepIdx=0;
   updateStep();
   openRoutePanel();
+  // If already in AR view, make sure the minimap is visible again
+  if(G.view==='ar') document.getElementById('ar-minimap-wrap').classList.add('mm-visible');
   sched();
 }
 
