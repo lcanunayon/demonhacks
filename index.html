@@ -407,7 +407,7 @@ const DIR_ANGLE = {
 // ═══════════════════════════════════════════════════════════════════
 const G = {
   graph:null, nodeMap:{}, adj:{},
-  canvas:null, ctx:null, mapImg:null,
+  canvas:null, ctx:null, mapImg:null, arrowImg:null,
   pan:{x:0,y:0}, zoom:1,
   dragging:false, wasDrag:false, lastXY:{x:0,y:0},
   touches:[], pinchDist0:0, pinchZoom0:1,
@@ -477,6 +477,11 @@ function bootGraph(data) {
     img.src = paths[0];
   }
   tryLoadImg(['assets/map.png','assets/map.jpg','assets/map.jpeg','assets/pedway.png','assets/pedway.jpg']);
+
+  // Load direction arrow sprite sheet
+  const arrowImg = new Image();
+  arrowImg.onload = () => { G.arrowImg = arrowImg; };
+  arrowImg.src = 'assets/directionarrow.png';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1100,25 +1105,51 @@ function drawARArrow(){
   const ctx=c.getContext('2d');
   ctx.clearRect(0,0,c.width,c.height);
   const s=G.steps[G.stepIdx]; if(!s||!s.dir) return;
-  const angDeg=DIR_ANGLE[s.dir]??0;
-  const angRad=angDeg*Math.PI/180;
   const cx=c.width/2, cy=c.height*0.38;
-  const r=Math.min(c.width,c.height)*0.15;
-  ctx.save(); ctx.translate(cx,cy); ctx.rotate(angRad);
-  const aw=r*.38, ah=r;
-  // Glow
-  ctx.shadowColor='#2196f3'; ctx.shadowBlur=28;
-  ctx.beginPath();
-  ctx.moveTo(0,-ah);
-  ctx.lineTo(aw*.9,-ah*.1); ctx.lineTo(aw*.38,-ah*.1);
-  ctx.lineTo(aw*.38, ah*.5);ctx.lineTo(-aw*.38,ah*.5);
-  ctx.lineTo(-aw*.38,-ah*.1);ctx.lineTo(-aw*.9,-ah*.1);
-  ctx.closePath();
-  ctx.fillStyle='rgba(33,150,243,.88)'; ctx.fill();
-  ctx.shadowBlur=0;
-  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2; ctx.stroke();
-  ctx.restore();
+  const size=Math.min(c.width,c.height)*0.30;
+
+  if(G.arrowImg && G.arrowImg.complete && G.arrowImg.naturalWidth>0){
+    // Sprite sheet layout:
+    //   top-left  = right arrow (east)    top-right = down arrow (south)
+    //   bot-left  = left arrow  (west)    bot-right = up arrow   (north)
+    const iw=G.arrowImg.naturalWidth, ih=G.arrowImg.naturalHeight;
+    const qw=iw/2, qh=ih/2;
+    const sp={
+      north:     {sx:qw, sy:qh, r:0},
+      south:     {sx:qw, sy:0,  r:0},
+      east:      {sx:0,  sy:0,  r:0},
+      west:      {sx:0,  sy:qh, r:0},
+      northeast: {sx:0,  sy:0,  r:-Math.PI/4},  // east rotated 45° CCW
+      southeast: {sx:0,  sy:0,  r: Math.PI/4},  // east rotated 45° CW
+      southwest: {sx:0,  sy:qh, r: Math.PI/4},  // west rotated 45° CW
+      northwest: {sx:0,  sy:qh, r:-Math.PI/4},  // west rotated 45° CCW
+    };
+    const d=sp[s.dir]||sp.north;
+    ctx.save();
+    ctx.translate(cx,cy); ctx.rotate(d.r);
+    ctx.shadowColor='rgba(0,0,0,0.65)'; ctx.shadowBlur=22;
+    ctx.drawImage(G.arrowImg, d.sx, d.sy, qw, qh, -size/2, -size/2, size, size);
+    ctx.restore();
+  } else {
+    // Fallback: drawn arrow
+    const angRad=(DIR_ANGLE[s.dir]??0)*Math.PI/180;
+    const r=size*0.5, aw=r*.38, ah=r;
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(angRad);
+    ctx.shadowColor='#2196f3'; ctx.shadowBlur=28;
+    ctx.beginPath();
+    ctx.moveTo(0,-ah);
+    ctx.lineTo(aw*.9,-ah*.1); ctx.lineTo(aw*.38,-ah*.1);
+    ctx.lineTo(aw*.38,ah*.5); ctx.lineTo(-aw*.38,ah*.5);
+    ctx.lineTo(-aw*.38,-ah*.1); ctx.lineTo(-aw*.9,-ah*.1);
+    ctx.closePath();
+    ctx.fillStyle='rgba(33,150,243,.88)'; ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2; ctx.stroke();
+    ctx.restore();
+  }
+
   // Pulse ring
+  const r=size*0.5;
   const t=Date.now()%1200/1200;
   const pr=r*(1+t*.6), pa=.5*(1-t);
   ctx.beginPath(); ctx.arc(cx,cy,pr,0,Math.PI*2);

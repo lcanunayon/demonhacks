@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pednav-v2';
+const CACHE_NAME = 'pednav-v3';
 
 // App shell files to cache on install
 const PRECACHE_URLS = [
@@ -10,6 +10,7 @@ const PRECACHE_URLS = [
   './assets/pedway_graph.js',
   './assets/map.jpg',
   './assets/logo.png',
+  './assets/directionarrow.png',
 ];
 
 // Install: pre-cache the app shell
