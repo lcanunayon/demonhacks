@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Chicago Pedway Navigation</title>
+<style>
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #111416;
+  --surf:    #1c1f23;
+  --surf2:   #252a2f;
+  --border:  #2e3338;
+  --text:    #eaeaea;
+  --muted:   #8a9099;
+  --accent:  #2196f3;
+  --from:    #4caf50;
+  --to:      #f44336;
+  --route:   #2196f3;
+}
+html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  -webkit-tap-highlight-color:transparent; }
+body { display:flex; flex-direction:column; }
+
+/* ── Header ── */
+#header { height:80px; background:var(--surf); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 12px; flex-shrink:0; z-index:10; position:relative; }
+#app-title { font-size:16px; font-weight:700; letter-spacing:-.3px; }
+#view-tabs { display:flex; background:var(--bg); border-radius:8px; padding:3px; gap:2px; }
+.vtab { padding:5px 16px; border:none; border-radius:6px; background:transparent;
+  color:var(--muted); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
+.vtab.active { background:var(--accent); color:#fff; }
+
+/* ── Search bar ── */
+#search-bar { background:var(--surf); border-bottom:1px solid var(--border);
+  padding:8px 10px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;
+  position:relative; z-index:9; }
+.srow { display:flex; align-items:center; gap:8px; background:var(--surf2);
+  border:1.5px solid var(--border); border-radius:9px; padding:0 10px; transition:border-color .15s; }
+.srow:focus-within { border-color:var(--accent); }
+.sdot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.from-sdot { background:var(--from); }
+.to-sdot   { background:var(--to); }
+.sinput { flex:1; border:none; background:transparent; color:var(--text);
+  font-size:14px; padding:9px 0; outline:none; min-width:0; }
+.sinput::placeholder { color:var(--muted); }
+.xclear { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;
+  padding:0 2px; line-height:1; display:none; }
+.xclear:hover { color:var(--text); }
+
+/* ── Autocomplete ── */
+#autocomplete { position:fixed; background:var(--surf); border:1px solid var(--border);
+  border-radius:10px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,.6);
+  z-index:30; display:none; max-height:260px; overflow-y:auto; }
+.ac-item { display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer;
+  border-bottom:1px solid var(--border); font-size:14px; }
+.ac-item:last-child { border-bottom:none; }
+.ac-item:hover { background:var(--surf2); }
+.ac-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.ac-name { flex:1; }
+.ac-kind { color:var(--muted); font-size:11px; }
+
+/* ── View area ── */
+#view-area { flex:1; position:relative; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+
+/* ── Map ── */
+#map-view { flex:1; position:relative; overflow:hidden; background:#0a0d11; display:flex; }
+#map-canvas { position:absolute; top:0; left:0; cursor:grab; touch-action:none; }
+#map-canvas:active { cursor:grabbing; }
+#img-prompt { position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px; background:rgba(20,22,26,.93);
+  border:1px solid var(--border); border-radius:8px; padding:8px 14px;
+  font-size:13px; color:var(--muted); white-space:nowrap; z-index:5; }
+#img-prompt button { background:var(--surf2); border:1px solid var(--border); color:var(--text);
+  border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer; }
+#img-prompt button:hover { background:#333; }
+#zoom-btns { position:absolute; bottom:60px; right:12px; display:flex; flex-direction:column; gap:4px; z-index:5; }
+#zoom-btns button { width:34px; height:34px; border:1px solid var(--border); background:var(--surf);
+  color:var(--text); border-radius:7px; font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; }
+#zoom-btns button:hover { background:var(--surf2); }
+#node-tooltip { position:fixed; background:rgba(15,17,20,.96); border:1px solid var(--border);
+  border-radius:7px; padding:7px 11px; font-size:12px; pointer-events:none;
+  display:none; z-index:20; max-width:220px; line-height:1.4; }
+/* legend */
+#legend { position:absolute; top:8px; right:8px; background:rgba(28,31,35,.9);
+  border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:11px;
+  line-height:1.9; z-index:5; }
+.leg-row { display:flex; align-items:center; gap:6px; }
+.leg-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* ── AR view ── */
+#ar-view { flex:1; position:relative; overflow:hidden; background:#000; display:none; flex-direction:column; }
+#camera { width:100%; height:100%; object-fit:cover; display:none; }
+#ar-canvas { position:absolute; top:0; left:0; pointer-events:none; }
+#ar-overlay { position:absolute; bottom:0; left:0; right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,.88) 30%);
+  padding:16px; display:none; }
+#ar-dir-label { font-size:22px; font-weight:700; color:#fff; margin-bottom:4px; }
+#ar-instruction { font-size:14px; color:rgba(255,255,255,.82); margin-bottom:14px; }
+#ar-nav-row { display:flex; align-items:center; gap:10px; }
+#ar-nav-row button { flex:1; padding:10px; background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22); border-radius:9px; color:#fff;
+  font-size:13px; cursor:pointer; }
+#ar-nav-row button:disabled { opacity:.3; cursor:not-allowed; }
+#ar-prog { color:rgba(255,255,255,.55); font-size:12px; text-align:center; min-width:50px; }
+#cam-prompt { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  text-align:center; color:rgba(255,255,255,.65); z-index:5; }
+#cam-prompt p { margin-top:8px; font-size:14px; }
+#cam-prompt button { margin-top:14px; padding:10px 22px; background:var(--accent);
+  border:none; border-radius:9px; color:#fff; font-size:14px; cursor:pointer; }
+#ar-no-route { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  text-align:center; color:rgba(255,255,255,.5); display:none; z-index:5; }
+#ar-no-route p { margin-top:10px; font-size:14px; }
+
+/* ── Filter bar ── */
+#filter-bar { height:44px; background:var(--surf); border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:6px; padding:0 10px;
+  overflow-x:auto; flex-shrink:0; scrollbar-width:none; }
+#filter-bar::-webkit-scrollbar { display:none; }
+.fchip { padding:5px 12px; border:1px solid var(--border); border-radius:20px;
+  background:transparent; color:var(--muted); font-size:12px; cursor:pointer;
+  white-space:nowrap; flex-shrink:0; transition:all .15s; }
+.fchip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* ── Step panel ── */
+#step-panel { background:var(--surf); border-top:1px solid var(--border);
+  display:none; align-items:center; padding:10px 10px; gap:8px; flex-shrink:0; }
+.snav { width:36px; height:36px; border:1px solid var(--border); background:var(--surf2);
+  color:var(--text); border-radius:8px; font-size:15px; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; }
+.snav:hover:not(:disabled) { background:#333; }
+.snav:disabled { opacity:.3; cursor:not-allowed; }
+#step-body { flex:1; min-width:0; }
+#step-num  { font-size:11px; color:var(--muted); margin-bottom:2px; }
+#step-txt  { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#step-sub  { font-size:11px; color:var(--accent); margin-top:1px; }
+
+/* ── Route side panel ── */
+#route-panel { position:fixed; top:80px; right:0; bottom:0; width:280px;
+  background:var(--surf); border-left:1px solid var(--border);
+  display:flex; flex-direction:column; z-index:15;
+  transform:translateX(100%); transition:transform .25s ease;
+  box-shadow:-4px 0 24px rgba(0,0,0,.55); }
+#route-panel.open { transform:translateX(0); }
+#rp-hdr { display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+#rp-title { font-size:14px; font-weight:600; }
+#rp-close { background:none; border:none; color:var(--muted); font-size:20px;
+  cursor:pointer; line-height:1; padding:0 2px; }
+#rp-close:hover { color:var(--text); }
+#rp-summary { padding:7px 14px; font-size:12px; color:var(--muted);
+  border-bottom:1px solid var(--border); flex-shrink:0; }
+#rp-steps { flex:1; overflow-y:auto; }
+#rp-steps::-webkit-scrollbar { width:4px; }
+#rp-steps::-webkit-scrollbar-thumb { background:#444; border-radius:2px; }
+.rstep { display:flex; align-items:flex-start; gap:8px; padding:10px 12px;
+  border-bottom:1px solid var(--border); cursor:pointer; transition:background .1s; }
+.rstep:hover { background:var(--surf2); }
+.rstep.active { background:rgba(33,150,243,.13); border-left:3px solid var(--accent);
+  padding-left:9px; }
+.rstep-num { font-size:11px; color:var(--muted); min-width:20px; flex-shrink:0; padding-top:1px; }
+.rstep-icon { font-size:14px; flex-shrink:0; line-height:1.4; }
+.rstep-body { flex:1; min-width:0; }
+.rstep-txt { font-size:12px; color:var(--text); line-height:1.35; }
+.rstep-dir { font-size:11px; color:var(--accent); margin-top:2px; }
+
+/* ── Loading overlay ── */
+#loading { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; z-index:100; gap:14px; text-align:center; }
+#loading h2 { font-size:22px; }
+#loading p  { font-size:14px; color:var(--muted); }
+#loading button { padding:10px 22px; background:var(--accent); border:none; border-radius:9px;
+  color:#fff; font-size:14px; cursor:pointer; margin-top:6px; display:none; }
+.spinner { width:32px; height:32px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* autocomplete scrollbar */
+#autocomplete::-webkit-scrollbar { width:4px; }
+#autocomplete::-webkit-scrollbar-thumb { background:#555; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>🏙 Chicago Pedway</h2>
+  <p>Loading navigation data…</p>
+  <button id="load-btn" onclick="document.getElementById('json-file').click()">Load pedway_graph.json</button>
+  <input type="file" id="json-file" accept=".json" style="display:none" onchange="loadJSONFile(event)">
+</div>
+
+<!-- Header -->
+<div id="header">
+  <div id="app-title" style="display:flex;align-items:center;gap:10px">
+    <img src="assets/logo.png" alt="PedNav" style="height:72px;object-fit:contain;display:block;">
+    <span style="font-size:26px;font-weight:800;letter-spacing:-0.5px;line-height:1">
+      <span style="color:#ffffff">Ped</span><span style="color:#2196f3">Nav</span>
+    </span>
+  </div>
+  <div id="view-tabs">
+    <button id="tab-map" class="vtab active" onclick="switchView('map')">Map</button>
+    <button id="tab-ar"  class="vtab"        onclick="switchView('ar')">AR</button>
+  </div>
+</div>
+
+<!-- Search -->
+<div id="search-bar">
+  <div style="display:flex;gap:6px;align-items:stretch">
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div class="srow" id="from-row">
+        <div class="sdot from-sdot"></div>
+        <input class="sinput" id="from-input" type="text" placeholder="From — tap a dot or search…"
+          autocomplete="off" spellcheck="false"
+          oninput="onSInput('from')" onfocus="onSFocus('from')" onblur="onSBlur()">
+        <button class="xclear" id="from-x" onclick="clearPt('from')">×</button>
+      </div>
+      <div class="srow" id="to-row">
+        <div class="sdot to-sdot"></div>
+        <input class="sinput" id="to-input" type="text" placeholder="To — tap a dot or search…"
+          autocomplete="off" spellcheck="false"
+          oninput="onSInput('to')" onfocus="onSFocus('to')" onblur="onSBlur()">
+        <button class="xclear" id="to-x" onclick="clearPt('to')">×</button>
+      </div>
+    </div>
+    <button id="reset-btn" onclick="resetAll()" disabled
+      title="Clear route"
+      style="flex-shrink:0;padding:0 14px;background:var(--surf2);border:1.5px solid var(--border);
+             border-radius:9px;color:var(--muted);font-size:12px;font-weight:600;cursor:not-allowed;
+             transition:all .15s;white-space:nowrap;opacity:.4">
+      Reset
+    </button>
+  </div>
+</div>
+
+<!-- Autocomplete -->
+<div id="autocomplete"></div>
+
+<!-- Views -->
+<div id="view-area">
+
+  <!-- MAP -->
+  <div id="map-view">
+    <canvas id="map-canvas"></canvas>
+    <div id="img-prompt">
+      <span>No map image loaded:</span>
+      <button onclick="document.getElementById('img-file').click()">Upload Pedway Map</button>
+    </div>
+    <div id="zoom-btns">
+      <button onclick="doZoom(1.3)" title="Zoom in">+</button>
+      <button onclick="doZoom(0.77)" title="Zoom out">−</button>
+      <button onclick="fitView()" title="Fit view" style="font-size:13px">⊡</button>
+    </div>
+    <div id="legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#4caf50"></div>Start (A)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#f44336"></div>End (B)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#2196f3"></div>Route</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#ff8c00"></div>Exit</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#2196f3"></div>Transit</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#f44336"></div>Food</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#9c27b0"></div>Retail</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#ffc107"></div>Building</div>
+    </div>
+    <div id="node-tooltip"></div>
+  </div>
+
+  <!-- AR -->
+  <div id="ar-view">
+    <div id="cam-prompt">
+      <div style="font-size:44px">📷</div>
+      <p>Point your camera at the Pedway<br>and follow the AR directions</p>
+      <button onclick="startCam()">Enable Camera</button>
+    </div>
+    <video id="camera" autoplay playsinline muted></video>
+    <canvas id="ar-canvas"></canvas>
+    <div id="ar-overlay">
+      <div id="ar-dir-label"></div>
+      <div id="ar-instruction"></div>
+      <div id="ar-nav-row">
+        <button id="ar-prev" onclick="prevStep()">◀ Prev</button>
+        <div id="ar-prog"></div>
+        <button id="ar-next" onclick="nextStep()">Next ▶</button>
+      </div>
+    </div>
+    <div id="ar-no-route">
+      <div style="font-size:40px">🗺</div>
+      <p>Set a From and To in Map view<br>to enable AR navigation</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Filter bar -->
+<div id="filter-bar">
+  <button class="fchip active"  onclick="setFilter('all')">All</button>
+  <button class="fchip"         onclick="setFilter('exit')">Exits</button>
+  <button class="fchip"         onclick="setFilter('transit')">Transit</button>
+  <button class="fchip"         onclick="setFilter('restaurant')">Food</button>
+  <button class="fchip"         onclick="setFilter('retail')">Shops</button>
+  <button class="fchip"         onclick="setFilter('restroom')">Restrooms</button>
+  <button class="fchip"         onclick="setFilter('parking')">Parking</button>
+  <button class="fchip"         onclick="setFilter('landmark')">Buildings</button>
+</div>
+
+<!-- Step panel -->
+<div id="step-panel">
+  <button class="snav" id="sp-prev" onclick="prevStep()">◀</button>
+  <div id="step-body">
+    <div id="step-num"></div>
+    <div id="step-txt"></div>
+    <div id="step-sub"></div>
+  </div>
+  <button class="snav" id="sp-next" onclick="nextStep()">▶</button>
+</div>
+
+<!-- Route side panel -->
+<div id="route-panel">
+  <div id="rp-hdr">
+    <span id="rp-title">Route</span>
+    <button id="rp-close" onclick="closeRoutePanel()">✕</button>
+  </div>
+  <div id="rp-summary"></div>
+  <div id="rp-steps"></div>
+</div>
+
+<input type="file" id="img-file" accept="image/*" style="display:none" onchange="loadImg(event)">
+
+<!-- Graph data — auto-generated from pedway_graph.json -->
+<script src="assets/pedway_graph.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════
+function displayName(n) {
+  if (n.name) return n.name;
+  const type = n.type.charAt(0).toUpperCase() + n.type.slice(1);
+  if (n.lat != null && n.lng != null)
+    return `${type} (${n.lat.toFixed(5)}, ${n.lng.toFixed(5)})`;
+  return type;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Config
+// ════════════════════════════
+const NCFG = {
+  junction:   { color:'#505560', r:4,  label:false },
+  exit:       { color:'#ff8c00', r:8,  label:true  },
+  transit:    { color:'#2196f3', r:9,  label:true  },
+  restaurant: { color:'#f44336', r:8,  label:true  },
+  retail:     { color:'#9c27b0', r:7,  label:true  },
+  restroom:   { color:'#00bcd4', r:7,  label:true  },
+  parking:    { color:'#78909c', r:7,  label:true  },
+  landmark:   { color:'#ffc107', r:9,  label:true  },
+};
+const DIR_ARROW = {
+  north:'↑', northeast:'↗', east:'→', southeast:'↘',
+  south:'↓', southwest:'↙', west:'←', northwest:'↖',
+};
+const DIR_ANGLE = {
+  north:-90, northeast:-45, east:0, southeast:45,
+  south:90, southwest:135, west:180, northwest:-135,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════
+const G = {
+  graph:null, nodeMap:{}, adj:{},
+  canvas:null, ctx:null, mapImg:null,
+  pan:{x:0,y:0}, zoom:1,
+  dragging:false, wasDrag:false, lastXY:{x:0,y:0},
+  touches:[], pinchDist0:0, pinchZoom0:1,
+  fromNode:null, toNode:null,
+  route:[], routeEdges:new Set(), steps:[], stepIdx:0,
+  view:'map', filter:'all',
+  hovered:null, activeInput:'from',
+  blurTmr:null, camStream:null, arRaf:null,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// Bootstrap
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  G.canvas = document.getElementById('map-canvas');
+  G.ctx    = G.canvas.getContext('2d');
+
+  if (window.PEDWAY_GRAPH) {
+    bootGraph(window.PEDWAY_GRAPH);
+  } else {
+    document.querySelector('#loading p').textContent = 'assets/pedway_graph.js not found. Load the JSON manually.';
+    document.getElementById('load-btn').style.display = 'block';
+    document.querySelector('.spinner').style.display  = 'none';
+  }
+  new ResizeObserver(resizeCanvas).observe(document.getElementById('map-view'));
+});
+
+function loadJSONFile(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => { try { bootGraph(JSON.parse(ev.target.result)); } catch { alert('Invalid JSON.'); } };
+  r.readAsText(f); e.target.value = '';
+}
+
+function bootGraph(data) {
+  G.graph = data;
+  data.nodes.forEach(n => { G.nodeMap[n.id] = n; G.adj[n.id] = []; });
+  data.edges.forEach(e => {
+    G.adj[e.from]?.push({id:e.to,   dist:e.distance});
+    G.adj[e.to]?.push(  {id:e.from, dist:e.distance});
+  });
+  document.getElementById('loading').style.display = 'none';
+  resizeCanvas(); fitView(); draw(); bindCanvas();
+
+  // Auto-load map image from assets folder (try png then jpg)
+  function tryLoadImg(paths) {
+    if (!paths.length) return;
+    const img = new Image();
+    img.onload = () => {
+      G.mapImg = img;
+      document.getElementById('img-prompt').style.display = 'none';
+      sched();
+    };
+    img.onerror = () => tryLoadImg(paths.slice(1));
+    img.src = paths[0];
+  }
+  tryLoadImg(['assets/map.png','assets/map.jpg','assets/map.jpeg','assets/pedway.png','assets/pedway.jpg']);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Canvas
+// ═══════════════════════════════════════════════════════════════════
+function resizeCanvas() {
+  const v = document.getElementById('map-view');
+  G.canvas.width  = v.clientWidth;
+  G.canvas.height = v.clientHeight;
+  draw();
+}
+
+function fitView() {
+  if (!G.graph) return;
+  const w=G.canvas.width, h=G.canvas.height;
+  const iw=G.graph.meta.imageWidth||4900, ih=G.graph.meta.imageHeight||7300;
+  G.zoom = Math.min(w/iw, h/ih) * 0.96;
+  G.pan.x = (w - iw*G.zoom)/2;
+  G.pan.y = (h - ih*G.zoom)/2;
+}
+
+function doZoom(f) {
+  const w=G.canvas.width, h=G.canvas.height;
+  const nz = Math.max(.04, Math.min(14, G.zoom*f));
+  G.pan.x = w/2 - (w/2 - G.pan.x)*(nz/G.zoom);
+  G.pan.y = h/2 - (h/2 - G.pan.y)*(nz/G.zoom);
+  G.zoom = nz; sched();
+}
+
+function imgXY(cx,cy) {
+  const r = G.canvas.getBoundingClientRect();
+  return { x:(cx-r.left-G.pan.x)/G.zoom, y:(cy-r.top-G.pan.y)/G.zoom };
+}
+
+function nodeAt(cx,cy) {
+  const p=imgXY(cx,cy), th=20/G.zoom;
+  let best=null, bd=th;
+  for (const n of G.graph.nodes) {
+    if (n.type==='junction') continue;  // junctions are routing-only, not user-selectable
+    if (G.filter!=='all' && n.type!==G.filter) continue;
+    const d=Math.hypot(n.x-p.x, n.y-p.y);
+    if (d<bd) { bd=d; best=n; }
+  }
+  return best;
+}
+
+function panTo(node) {
+  if (!node) return;
+  G.pan.x = G.canvas.width /2 - node.x*G.zoom;
+  G.pan.y = G.canvas.height/2 - node.y*G.zoom;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Drawing
+// ═══════════════════════════════════════════════════════════════════
+let pending=false;
+function sched() { if (!pending) { pending=true; requestAnimationFrame(()=>{pending=false;draw();}); } }
+
+function draw() {
+  if (!G.canvas||!G.graph) return;
+  const ctx=G.ctx, w=G.canvas.width, h=G.canvas.height;
+  const iw=G.graph.meta.imageWidth, ih=G.graph.meta.imageHeight;
+  ctx.clearRect(0,0,w,h);
+  ctx.save(); ctx.translate(G.pan.x,G.pan.y); ctx.scale(G.zoom,G.zoom);
+
+  // Background
+  if (G.mapImg) {
+    ctx.drawImage(G.mapImg, 0, 0);
+  } else {
+    ctx.fillStyle='#0a0d11'; ctx.fillRect(0,0,iw,ih);
+    ctx.strokeStyle='#13191f'; ctx.lineWidth=1;
+    for (let x=0;x<iw;x+=300){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,ih);ctx.stroke();}
+    for (let y=0;y<ih;y+=300){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(iw,y);ctx.stroke();}
+  }
+
+  // Edges
+  for (const e of G.graph.edges) {
+    const a=G.nodeMap[e.from], b=G.nodeMap[e.to]; if (!a||!b) continue;
+    const key=`${e.from}|${e.to}`, key2=`${e.to}|${e.from}`;
+    const onRoute = G.routeEdges.has(key)||G.routeEdges.has(key2);
+    ctx.strokeStyle = onRoute ? 'rgba(33,150,243,.88)' : G.mapImg ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.14)';
+    ctx.lineWidth   = onRoute ? 5 : 1.5;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  }
+
+  // Route direction chevrons
+  if (G.route.length>1) {
+    for (let i=0;i<G.route.length-1;i++) {
+      const a=G.nodeMap[G.route[i]], b=G.nodeMap[G.route[i+1]]; if(!a||!b) continue;
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      const ang=Math.atan2(b.y-a.y, b.x-a.x);
+      const as=Math.max(3, 5/G.zoom);
+      ctx.save(); ctx.translate(mx,my); ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(as,0); ctx.lineTo(-as,-as*.6); ctx.lineTo(-as*.3,0); ctx.lineTo(-as,as*.6);
+      ctx.closePath();
+      ctx.fillStyle='rgba(33,150,243,.8)'; ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Nodes
+  const showJxn = G.zoom > 0.18;
+  for (const n of G.graph.nodes) {
+    if (!showJxn && n.type==='junction') continue;
+    if (G.filter!=='all' && n.type!==G.filter && n.type!=='junction') continue;
+    const cfg = NCFG[n.type]||NCFG.junction;
+    const isFrom  = G.fromNode?.id===n.id;
+    const isTo    = G.toNode?.id===n.id;
+    const onRoute = G.routeEdges.size>0 && G.route.includes(n.id);
+    const isCur   = G.steps[G.stepIdx]?.node?.id===n.id;
+    const isHov   = G.hovered?.id===n.id;
+    const r = isFrom||isTo ? 13 : isCur ? 11 : isHov ? cfg.r+3 : cfg.r;
+
+    if (onRoute && !isFrom && !isTo) { ctx.shadowColor='#2196f3'; ctx.shadowBlur=10; }
+    if (isCur && !isFrom && !isTo)   { ctx.shadowColor='#64b5f6'; ctx.shadowBlur=16; }
+
+    // Junctions are near-invisible — they exist only for routing
+    const isJunction = n.type === 'junction';
+    ctx.globalAlpha = isJunction && !onRoute ? 0.08 : 1;
+
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2);
+    ctx.fillStyle = isFrom ? '#4caf50' : isTo ? '#f44336' : onRoute ? '#2196f3' : cfg.color;
+    ctx.fill(); ctx.shadowBlur=0;
+
+    ctx.strokeStyle = isHov||isFrom||isTo||onRoute ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.2)';
+    ctx.lineWidth = isFrom||isTo ? 2.5 : 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    if (isFrom||isTo) {
+      const lbl = isFrom ? 'A' : 'B';
+      const fs = Math.max(8, 11/G.zoom);
+      ctx.fillStyle='#fff'; ctx.font=`bold ${fs}px sans-serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(lbl, n.x, n.y);
+    }
+
+    if (n.name && cfg.label && G.zoom>0.14 && !isFrom && !isTo) {
+      const fs = Math.min(14, Math.max(8, 10/G.zoom));
+      ctx.font=`${fs}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='bottom';
+      const ly = n.y - r - 4;
+      ctx.strokeStyle='rgba(0,0,0,.9)';
+      ctx.lineWidth = Math.min(3, 2.5/G.zoom);  // cap so it never overwhelms the fill
+      ctx.lineJoin='round'; ctx.strokeText(n.name,n.x,ly);
+      ctx.fillStyle = onRoute ? '#90caf9' : '#fff';  // always white — outline provides contrast
+      ctx.fillText(n.name, n.x, ly);
+    }
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Canvas events
+// ═══════════════════════════════════════════════════════════════════
+function bindCanvas() {
+  const c=G.canvas;
+  c.addEventListener('mousedown',  mdwn);
+  c.addEventListener('mousemove',  mmov);
+  c.addEventListener('mouseup',    mup);
+  c.addEventListener('mouseleave', mup);
+  c.addEventListener('click',      mclk);
+  c.addEventListener('wheel',      mwhl, {passive:false});
+  c.addEventListener('touchstart', ts,   {passive:false});
+  c.addEventListener('touchmove',  tm,   {passive:false});
+  c.addEventListener('touchend',   te);
+  c.addEventListener('contextmenu',e=>e.preventDefault());
+}
+function mdwn(e){if(e.button!==0)return;G.dragging=true;G.wasDrag=false;G.lastXY={x:e.clientX,y:e.clientY};}
+function mmov(e){
+  if(G.dragging){
+    const dx=e.clientX-G.lastXY.x, dy=e.clientY-G.lastXY.y;
+    if(Math.abs(dx)+Math.abs(dy)>3) G.wasDrag=true;
+    G.pan.x+=dx; G.pan.y+=dy; G.lastXY={x:e.clientX,y:e.clientY}; sched();
+  }
+  const n=nodeAt(e.clientX,e.clientY);
+  if(n!==G.hovered){G.hovered=n;sched();}
+  if(n?.name) showTip(n,e.clientX,e.clientY); else hideTip();
+  if(G.hovered) moveTip(e.clientX,e.clientY);
+}
+function mup(){G.dragging=false;}
+function mclk(e){
+  if(G.wasDrag){G.wasDrag=false;return;}
+  closeDrop();
+  const n=nodeAt(e.clientX,e.clientY); if(!n) return;
+  setPt(G.activeInput,n);
+}
+function mwhl(e){
+  e.preventDefault();
+  const f=e.deltaY<0?1.12:.89;
+  const r=G.canvas.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const nz=Math.max(.04,Math.min(14,G.zoom*f));
+  G.pan.x=mx-(mx-G.pan.x)*(nz/G.zoom);
+  G.pan.y=my-(my-G.pan.y)*(nz/G.zoom);
+  G.zoom=nz; sched();
+}
+function ts(e){
+  e.preventDefault(); G.touches=[...e.touches]; G.wasDrag=false;
+  if(e.touches.length===2){
+    G.pinchDist0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    G.pinchZoom0=G.zoom;
+  }
+}
+function tm(e){
+  e.preventDefault();
+  if(e.touches.length===1){
+    const t=e.touches[0], prev=G.touches[0]||t;
+    const dx=t.clientX-prev.clientX, dy=t.clientY-prev.clientY;
+    if(Math.abs(dx)+Math.abs(dy)>2) G.wasDrag=true;
+    G.pan.x+=dx; G.pan.y+=dy; G.touches=[...e.touches]; sched();
+  } else if(e.touches.length===2){
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    const nz=Math.max(.04,Math.min(14,G.pinchZoom0*(d/G.pinchDist0)));
+    const r=G.canvas.getBoundingClientRect();
+    const cx=((e.touches[0].clientX+e.touches[1].clientX)/2)-r.left;
+    const cy=((e.touches[0].clientY+e.touches[1].clientY)/2)-r.top;
+    G.pan.x=cx-(cx-G.pan.x)*(nz/G.zoom); G.pan.y=cy-(cy-G.pan.y)*(nz/G.zoom);
+    G.zoom=nz; G.touches=[...e.touches]; sched();
+  }
+}
+function te(e){
+  if(e.changedTouches.length===1&&!G.wasDrag){
+    const t=e.changedTouches[0]; closeDrop();
+    const n=nodeAt(t.clientX,t.clientY); if(n) setPt(G.activeInput,n);
+  }
+  G.touches=[...e.touches]; G.wasDrag=false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Endpoint management
+// ═══════════════════════════════════════════════════════════════════
+function setPt(which, node) {
+  if (which==='from') {
+    G.fromNode=node;
+    document.getElementById('from-input').value=displayName(node);
+    document.getElementById('from-x').style.display='block';
+    G.activeInput='to';
+    document.getElementById('to-input').focus();
+  } else {
+    G.toNode=node;
+    document.getElementById('to-input').value=displayName(node);
+    document.getElementById('to-x').style.display='block';
+    G.activeInput='from';
+    document.getElementById('to-input').blur();
+  }
+  closeDrop();
+  updateResetBtn();
+  if (G.fromNode&&G.toNode) route();
+  else sched();
+}
+
+function clearPt(which) {
+  if (which==='from') {
+    G.fromNode=null;
+    document.getElementById('from-input').value='';
+    document.getElementById('from-x').style.display='none';
+  } else {
+    G.toNode=null;
+    document.getElementById('to-input').value='';
+    document.getElementById('to-x').style.display='none';
+  }
+  G.route=[]; G.routeEdges=new Set(); G.steps=[];
+  document.getElementById('step-panel').style.display='none';
+  closeRoutePanel();
+  updateResetBtn();
+  sched();
+}
+
+function resetAll() {
+  G.fromNode=null; G.toNode=null;
+  G.route=[]; G.routeEdges=new Set(); G.steps=[];
+  document.getElementById('from-input').value='';
+  document.getElementById('to-input').value='';
+  document.getElementById('from-x').style.display='none';
+  document.getElementById('to-x').style.display='none';
+  document.getElementById('step-panel').style.display='none';
+  G.activeInput='from';
+  closeRoutePanel();
+  updateResetBtn();
+  sched();
+}
+
+function updateResetBtn() {
+  const btn = document.getElementById('reset-btn');
+  const hasAny = G.fromNode || G.toNode;
+  btn.disabled = !hasAny;
+  btn.style.opacity    = hasAny ? '1'   : '0.4';
+  btn.style.color      = hasAny ? 'var(--to)' : 'var(--muted)';
+  btn.style.borderColor= hasAny ? 'var(--to)' : 'var(--border)';
+  btn.style.cursor     = hasAny ? 'pointer'   : 'not-allowed';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// A*
+// ═══════════════════════════════════════════════════════════════════
+function aStar(sid, eid) {
+  const nm=G.nodeMap;
+  const h=id=>{const a=nm[id],b=nm[eid];return a&&b?Math.hypot(a.x-b.x,a.y-b.y):0;};
+  const gs={[sid]:0}, fs={[sid]:h(sid)}, from={};
+  const open=new Set([sid]), closed=new Set();
+  while(open.size){
+    let cur=null, bf=Infinity;
+    for(const id of open){const f=fs[id]??Infinity;if(f<bf){bf=f;cur=id;}}
+    if(cur===eid){
+      const p=[];let c=cur;
+      while(c!==undefined){p.unshift(c);c=from[c];}
+      return p;
+    }
+    open.delete(cur); closed.add(cur);
+    for(const {id:nid,dist} of (G.adj[cur]||[])){
+      if(closed.has(nid)) continue;
+      const tg=(gs[cur]??Infinity)+dist;
+      if(tg<(gs[nid]??Infinity)){from[nid]=cur;gs[nid]=tg;fs[nid]=tg+h(nid);open.add(nid);}
+    }
+  }
+  return null;
+}
+
+function route() {
+  const path=aStar(G.fromNode.id, G.toNode.id);
+  if(!path){alert('No route found. The graph may not be connected between these points.');return;}
+  G.route=path;
+  G.routeEdges=new Set();
+  for(let i=0;i<path.length-1;i++) G.routeEdges.add(`${path[i]}|${path[i+1]}`);
+  G.steps=buildSteps(path);
+  G.stepIdx=0;
+  updateStep();
+  openRoutePanel();
+  sched();
+}
+
+function openRoutePanel() {
+  // Compute total distance in meters (0.42 m/px from affine calibration)
+  let totalPx=0;
+  for(let i=0;i<G.route.length-1;i++){
+    const a=G.nodeMap[G.route[i]], b=G.nodeMap[G.route[i+1]];
+    if(a&&b) totalPx+=Math.hypot(a.x-b.x, a.y-b.y);
+  }
+  const meters=Math.round(totalPx*0.42);
+  const distLabel=meters>=1000?(meters/1000).toFixed(2)+' km':meters+' m';
+
+  document.getElementById('rp-title').textContent=`Route — ${G.steps.length} steps`;
+  document.getElementById('rp-summary').textContent=`~${distLabel} total`;
+  renderRouteSteps();
+  document.getElementById('route-panel').classList.add('open');
+}
+
+function renderRouteSteps() {
+  document.getElementById('rp-steps').innerHTML=G.steps.map((s,i)=>`
+    <div class="rstep${i===G.stepIdx?' active':''}" onclick="jumpStep(${i})">
+      <span class="rstep-num">${i+1}</span>
+      <span class="rstep-icon">${s.arrow}</span>
+      <div class="rstep-body">
+        <div class="rstep-txt">${s.text}</div>
+        ${s.dir?`<div class="rstep-dir">Facing ${s.dir}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function jumpStep(idx) { G.stepIdx=idx; updateStep(); }
+
+function closeRoutePanel() {
+  document.getElementById('route-panel').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Step instructions
+// ═══════════════════════════════════════════════════════════════════
+function buildSteps(path) {
+  if (!path || path.length === 0) return [];
+  const nodes = path.map(id => G.nodeMap[id]).filter(Boolean);
+  if (nodes.length < 2) return nodes.map((n,i) => ({
+    node:n, text:i===0?`Start at ${displayName(n)}`:`Arrive at ${displayName(n)}`, arrow:'●', dir:''
+  }));
+
+  const steps = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    const isFirst = i === 0, isLast = i === nodes.length-1;
+    const hasName = !!n.name;
+
+    // Compute turn angle at this node
+    let turnAngle = 0, turnLabel = 'straight';
+    if (i > 0 && i < nodes.length-1) {
+      const prev=nodes[i-1], next=nodes[i+1];
+      const a1=Math.atan2(n.y-prev.y, n.x-prev.x);
+      const a2=Math.atan2(next.y-n.y, next.x-n.x);
+      let d=(a2-a1)*180/Math.PI;
+      while(d>180) d-=360; while(d<-180) d+=360;
+      turnAngle=Math.abs(d);
+      turnLabel=turnType(nodes[i-1], n, nodes[i+1]);
+    }
+    const isTurn = turnAngle > 30;
+
+    // Only include: start, end, named nodes, or junction turns
+    if (!isFirst && !isLast && !hasName && !isTurn) continue;
+
+    const dir = i > 0 ? cardDir(nodes[i-1], n) : '';
+    const dLabel = dir ? dir.charAt(0).toUpperCase()+dir.slice(1) : '';
+    const arrow = isFirst ? '🟢' : isLast ? '🔴' : (DIR_ARROW[dir]||'→');
+
+    let text;
+    if (isFirst)      text = `Start at ${displayName(n)}`;
+    else if (isLast)  text = `Arrive at ${displayName(n)}`;
+    else if (hasName && turnLabel !== 'straight') text = `${turnLabel} at ${displayName(n)}`;
+    else if (hasName) text = `Continue ${dLabel} — ${displayName(n)}`;
+    else if (isTurn)  text = `${turnLabel} (${dLabel})`;
+    else              text = `Continue ${dLabel}`;
+
+    steps.push({ node:n, text, arrow, dir });
+  }
+  return steps;
+}
+
+function cardDir(a,b) {
+  const ang=Math.atan2(b.y-a.y, b.x-a.x)*180/Math.PI;
+  if(ang>-22.5 &&ang<=22.5)   return 'east';
+  if(ang>22.5  &&ang<=67.5)   return 'southeast';
+  if(ang>67.5  &&ang<=112.5)  return 'south';
+  if(ang>112.5 &&ang<=157.5)  return 'southwest';
+  if(Math.abs(ang)>157.5)     return 'west';
+  if(ang>-157.5&&ang<=-112.5) return 'northwest';
+  if(ang>-112.5&&ang<=-67.5)  return 'north';
+  return 'northeast';
+}
+
+function turnType(prev,cur,next) {
+  const a1=Math.atan2(cur.y-prev.y, cur.x-prev.x);
+  const a2=Math.atan2(next.y-cur.y,  next.x-cur.x);
+  let d=(a2-a1)*180/Math.PI;
+  while(d>180) d-=360; while(d<-180) d+=360;
+  if(Math.abs(d)<35) return 'straight';
+  return d>0?'Turn right':'Turn left';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Step panel
+// ═══════════════════════════════════════════════════════════════════
+function updateStep() {
+  const panel=document.getElementById('step-panel');
+  if(!G.steps.length){panel.style.display='none';return;}
+  panel.style.display='flex';
+  const s=G.steps[G.stepIdx], tot=G.steps.length;
+  document.getElementById('step-num').textContent=`Step ${G.stepIdx+1} of ${tot}`;
+  document.getElementById('step-txt').textContent=`${s.arrow}  ${s.text}`;
+  document.getElementById('step-sub').textContent=s.dir?`Facing ${s.dir}`:'';
+  document.getElementById('sp-prev').disabled=G.stepIdx===0;
+  document.getElementById('sp-next').disabled=G.stepIdx===tot-1;
+  panTo(s.node); sched();
+  if(G.view==='ar') updateAROverlay();
+  // Sync side panel highlight
+  const items=document.querySelectorAll('.rstep');
+  items.forEach((el,i)=>el.classList.toggle('active',i===G.stepIdx));
+  if(items[G.stepIdx]) items[G.stepIdx].scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function prevStep(){if(G.stepIdx>0){G.stepIdx--;updateStep();}}
+function nextStep(){if(G.stepIdx<G.steps.length-1){G.stepIdx++;updateStep();}}
+
+// ═══════════════════════════════════════════════════════════════════
+// Filter
+// ═══════════════════════════════════════════════════════════════════
+function setFilter(type) {
+  G.filter=type;
+  document.querySelectorAll('.fchip').forEach(b=>{
+    const label=b.textContent.trim().toLowerCase();
+    b.classList.toggle('active', label===type||(type==='all'&&label==='all'));
+  });
+  sched();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Tooltip
+// ═══════════════════════════════════════════════════════════════════
+function showTip(n,x,y){
+  const el=document.getElementById('node-tooltip');
+  el.innerHTML=`<strong>${displayName(n)}</strong><br><span style="color:var(--muted);font-size:11px">${n.type}</span>`;
+  el.style.display='block'; moveTip(x,y);
+}
+function moveTip(x,y){
+  const el=document.getElementById('node-tooltip');
+  el.style.left=(x+14)+'px'; el.style.top=(y-38)+'px';
+}
+function hideTip(){document.getElementById('node-tooltip').style.display='none';}
+
+// ═══════════════════════════════════════════════════════════════════
+// Search / Autocomplete
+// ═══════════════════════════════════════════════════════════════════
+function onSFocus(which){G.activeInput=which;clearTimeout(G.blurTmr);onSInput(which);}
+function onSBlur(){G.blurTmr=setTimeout(closeDrop,200);}
+function onSInput(which){
+  const inp=document.getElementById(which+'-input');
+  const q=inp.value.trim().toLowerCase();
+  if(!q||!G.graph){closeDrop();return;}
+  const hits=G.graph.nodes.filter(n=>displayName(n).toLowerCase().includes(q)).slice(0,9);
+  if(!hits.length){closeDrop();return;}
+  const r=inp.getBoundingClientRect();
+  const dd=document.getElementById('autocomplete');
+  dd.style.cssText=`display:block;left:${r.left}px;top:${r.bottom+4}px;width:${r.width}px;`;
+  dd.innerHTML=hits.map(n=>{
+    const cfg=NCFG[n.type]||NCFG.junction;
+    const dname=displayName(n);
+    const hl=dname.replace(new RegExp('('+inp.value.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<strong>$1</strong>');
+    return `<div class="ac-item" onmousedown="pickAC('${which}','${n.id}')">
+      <div class="ac-dot" style="background:${cfg.color}"></div>
+      <span class="ac-name">${hl}</span>
+      <span class="ac-kind">${n.type}</span>
+    </div>`;
+  }).join('');
+}
+function pickAC(which,id){
+  const n=G.nodeMap[id]; if(!n) return;
+  closeDrop(); setPt(which,n); panTo(n); sched();
+}
+function closeDrop(){document.getElementById('autocomplete').style.display='none';}
+
+// ═══════════════════════════════════════════════════════════════════
+// Map image upload
+// ═══════════════════════════════════════════════════════════════════
+function loadImg(e){
+  const f=e.target.files[0]; if(!f) return;
+  const img=new Image();
+  img.onload=()=>{G.mapImg=img;sched();};
+  img.src=URL.createObjectURL(f);
+  e.target.value='';
+  document.getElementById('img-prompt').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// View switch
+// ═══════════════════════════════════════════════════════════════════
+function switchView(v) {
+  G.view=v;
+  document.getElementById('map-view').style.display=v==='map'?'flex':'none';
+  document.getElementById('ar-view').style.display =v==='ar' ?'flex':'none';
+  document.getElementById('tab-map').classList.toggle('active',v==='map');
+  document.getElementById('tab-ar').classList.toggle('active', v==='ar');
+  if(v==='ar'){
+    const hasRoute=G.steps.length>0;
+    document.getElementById('ar-no-route').style.display=hasRoute?'none':'block';
+    document.getElementById('ar-overlay').style.display =hasRoute?'block':'none';
+    if(hasRoute){
+      // Auto-advance to first step that has a real direction
+      if(!G.steps[G.stepIdx]?.dir) {
+        const first=G.steps.findIndex(s=>s.dir);
+        if(first>=0) G.stepIdx=first;
+      }
+      updateAROverlay();resizeARCanvas();
+    }
+  } else {
+    resizeCanvas(); sched();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AR
+// ═══════════════════════════════════════════════════════════════════
+async function startCam(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    G.camStream=stream;
+    const vid=document.getElementById('camera');
+    vid.srcObject=stream; vid.style.display='block';
+    document.getElementById('cam-prompt').style.display='none';
+    resizeARCanvas(); arLoop();
+  } catch(err){alert('Camera not available: '+err.message);}
+}
+
+function resizeARCanvas(){
+  const v=document.getElementById('ar-view');
+  const c=document.getElementById('ar-canvas');
+  c.width=v.clientWidth; c.height=v.clientHeight;
+}
+
+function arLoop(){
+  drawARArrow();
+  if(G.view==='ar') G.arRaf=requestAnimationFrame(arLoop);
+}
+
+function drawARArrow(){
+  const c=document.getElementById('ar-canvas');
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  const s=G.steps[G.stepIdx]; if(!s||!s.dir) return;
+  const angDeg=DIR_ANGLE[s.dir]??0;
+  const angRad=angDeg*Math.PI/180;
+  const cx=c.width/2, cy=c.height*0.38;
+  const r=Math.min(c.width,c.height)*0.15;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(angRad);
+  const aw=r*.38, ah=r;
+  // Glow
+  ctx.shadowColor='#2196f3'; ctx.shadowBlur=28;
+  ctx.beginPath();
+  ctx.moveTo(0,-ah);
+  ctx.lineTo(aw*.9,-ah*.1); ctx.lineTo(aw*.38,-ah*.1);
+  ctx.lineTo(aw*.38, ah*.5);ctx.lineTo(-aw*.38,ah*.5);
+  ctx.lineTo(-aw*.38,-ah*.1);ctx.lineTo(-aw*.9,-ah*.1);
+  ctx.closePath();
+  ctx.fillStyle='rgba(33,150,243,.88)'; ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
+  // Pulse ring
+  const t=Date.now()%1200/1200;
+  const pr=r*(1+t*.6), pa=.5*(1-t);
+  ctx.beginPath(); ctx.arc(cx,cy,pr,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(33,150,243,${pa})`; ctx.lineWidth=2; ctx.stroke();
+}
+
+function updateAROverlay(){
+  const s=G.steps[G.stepIdx]; if(!s) return;
+  const arrow=DIR_ARROW[s.dir]||'';
+  const dir=s.dir?(s.dir.charAt(0).toUpperCase()+s.dir.slice(1)):'';
+  document.getElementById('ar-dir-label').textContent=s.dir?`${arrow} Facing ${dir}`:s.arrow||'';
+  document.getElementById('ar-instruction').textContent=s.text;
+  document.getElementById('ar-prog').textContent=`${G.stepIdx+1} / ${G.steps.length}`;
+  document.getElementById('ar-prev').disabled=G.stepIdx===0;
+  document.getElementById('ar-next').disabled=G.stepIdx===G.steps.length-1;
+  if(G.camStream) drawARArrow();
+}
+</script>
+</body>
+</html>

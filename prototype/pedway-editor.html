@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pedway Node Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #242424;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.toolbar-group {
+  display: flex;
+  gap: 4px;
+  padding-right: 12px;
+  border-right: 1px solid #444;
+}
+.toolbar-group:last-child { border-right: none; }
+button {
+  padding: 6px 12px;
+  border: 1px solid #444;
+  background: #333;
+  color: #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+button:hover { background: #444; }
+button.active { background: #0066cc; border-color: #0088ff; color: #fff; }
+button.success { background: #1a5c1a; border-color: #2a9b2a; }
+button.success:hover { background: #2a7a2a; }
+
+/* ── Main layout ── */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 260px;
+  background: #1e1e1e;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+#sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid #333;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 0;
+  background: #1e1e1e;
+  color: #777;
+  font-size: 12px;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: #e0e0e0; border-bottom-color: #0066cc; }
+#search-box {
+  padding: 8px;
+  border-bottom: 1px solid #333;
+}
+#search-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+}
+#search-input:focus { outline: none; border-color: #0066cc; }
+#node-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+.node-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.node-item:hover { background: #2a2a2a; }
+.node-item.selected { background: #1a3a5c; }
+.node-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.node-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-type-tag { color: #666; font-size: 11px; flex-shrink: 0; }
+#stats {
+  padding: 8px 12px;
+  border-top: 1px solid #333;
+  font-size: 11px;
+  color: #666;
+}
+
+/* ── Canvas ── */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #111;
+  cursor: crosshair;
+}
+#map-wrapper {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: 0 0;
+}
+#map-image {
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+#svg-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+}
+
+/* ── Upload prompt ── */
+#upload-prompt {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #555;
+  pointer-events: none;
+}
+#upload-prompt h2 { font-size: 22px; margin-bottom: 8px; color: #888; }
+#upload-prompt p  { font-size: 14px; margin-bottom: 16px; }
+#upload-btn-large {
+  padding: 12px 28px;
+  font-size: 15px;
+  background: #1a3a5c;
+  border-color: #0066cc;
+  pointer-events: all;
+}
+
+/* ── Node form popup ── */
+#node-form {
+  position: fixed;
+  background: #2c2c2c;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 16px;
+  width: 248px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+  z-index: 100;
+  display: none;
+}
+#node-form h3 { font-size: 13px; margin-bottom: 12px; color: #bbb; }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; }
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 6px 8px;
+  background: #383838;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+}
+.form-group input:focus,
+.form-group select:focus { outline: none; border-color: #0066cc; }
+.form-actions { display: flex; gap: 8px; margin-top: 12px; }
+.form-actions button { flex: 1; }
+#btn-confirm { background: #1a4a8a; border-color: #0066cc; }
+#btn-confirm:hover { background: #1a5caa; }
+
+/* ── Edit form (reuse node-form styles) ── */
+#edit-panel {
+  position: absolute;
+  bottom: 48px;
+  left: 8px;
+  background: #2c2c2c;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 14px;
+  width: 240px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  display: none;
+  z-index: 90;
+}
+#edit-panel h3 { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+
+/* ── Status bar ── */
+#status-bar {
+  padding: 4px 12px;
+  background: #242424;
+  border-top: 1px solid #333;
+  font-size: 11px;
+  color: #666;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ── Zoom controls ── */
+#zoom-controls {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#zoom-controls button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 18px;
+  text-align: center;
+  line-height: 1;
+}
+
+/* ── Legend ── */
+#legend {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(30,30,30,0.92);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.8;
+}
+#legend .l-row { display: flex; align-items: center; gap: 6px; }
+#legend .l-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Edge tooltip ── */
+#edge-tooltip {
+  position: fixed;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 11px;
+  pointer-events: none;
+  display: none;
+  z-index: 50;
+}
+
+/* ── Scrollbar ── */
+#node-list::-webkit-scrollbar { width: 5px; }
+#node-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ── Toolbar ── -->
+<div id="toolbar">
+  <div class="toolbar-group">
+    <button onclick="document.getElementById('file-input').click()">Upload Map</button>
+    <input type="file" id="file-input" accept="image/*" style="display:none">
+    <button onclick="document.getElementById('json-input').click()">Import JSON</button>
+    <input type="file" id="json-input" accept=".json" style="display:none" onchange="loadJSON(event)">
+  </div>
+  <div class="toolbar-group" id="mode-buttons">
+    <button id="btn-add-node" class="active" onclick="setMode('add-node')" title="N — Click map to add a node">Add Node (N)</button>
+    <button id="btn-add-edge"              onclick="setMode('add-edge')" title="E — Click two nodes to connect">Add Edge (E)</button>
+    <button id="btn-select"               onclick="setMode('select')"   title="S — Click to select / drag to move">Select (S)</button>
+    <button id="btn-delete"               onclick="setMode('delete')"   title="D — Click node or edge to delete">Delete (D)</button>
+  </div>
+  <div class="toolbar-group">
+    <button onclick="undo()" title="Ctrl+Z">Undo</button>
+    <button onclick="toggleLabels()">Labels</button>
+    <button onclick="fitToView()">Fit View</button>
+  </div>
+  <div class="toolbar-group">
+    <button class="success" onclick="exportJSON()">Export JSON</button>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div id="main">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-tabs">
+      <button class="tab-btn active" onclick="showTab('nodes')">Nodes</button>
+      <button class="tab-btn"        onclick="showTab('edges')">Edges</button>
+    </div>
+    <div id="search-box">
+      <input type="text" id="search-input" placeholder="Search by name or type…" oninput="filterNodes()">
+    </div>
+    <div id="node-list"></div>
+    <div id="stats">
+      <span id="stat-nodes">0 nodes</span> &middot; <span id="stat-edges">0 edges</span>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-container">
+    <div id="upload-prompt">
+      <h2>Pedway Node Editor</h2>
+      <p>Upload your pedway map image to begin placing nodes</p>
+      <button id="upload-btn-large" onclick="document.getElementById('file-input').click()">Upload Map Image</button>
+    </div>
+
+    <div id="map-wrapper">
+      <img id="map-image" src="" alt="" draggable="false">
+      <svg id="svg-overlay"></svg>
+    </div>
+
+    <!-- Legend -->
+    <div id="legend">
+      <div class="l-row"><div class="l-dot" style="background:#888"></div>Junction</div>
+      <div class="l-row"><div class="l-dot" style="background:#ff8c00"></div>Exit</div>
+      <div class="l-row"><div class="l-dot" style="background:#2196f3"></div>Transit</div>
+      <div class="l-row"><div class="l-dot" style="background:#f44336"></div>Restaurant</div>
+      <div class="l-row"><div class="l-dot" style="background:#9c27b0"></div>Retail</div>
+      <div class="l-row"><div class="l-dot" style="background:#00bcd4"></div>Restroom</div>
+      <div class="l-row"><div class="l-dot" style="background:#78909c"></div>Parking</div>
+      <div class="l-row"><div class="l-dot" style="background:#ffc107"></div>Landmark</div>
+    </div>
+
+    <!-- Zoom buttons -->
+    <div id="zoom-controls">
+      <button onclick="adjustZoom(0.25)">+</button>
+      <button onclick="adjustZoom(-0.25)">−</button>
+    </div>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div id="status-bar">
+  <span id="status-text">Upload a map image to get started</span>
+  <span id="status-mode">Mode: Add Node &nbsp;|&nbsp; Scroll = zoom &nbsp;|&nbsp; Alt+drag or middle-click = pan &nbsp;|&nbsp; Right-click = cancel</span>
+</div>
+
+<!-- Node add form -->
+<div id="node-form">
+  <h3>New Node</h3>
+  <div class="form-group">
+    <label>Name <span style="color:#555">(optional for any type)</span></label>
+    <input type="text" id="form-name" placeholder="optional" autocomplete="off">
+  </div>
+  <div class="form-group">
+    <label>Type</label>
+    <select id="form-type">
+      <option value="junction">Junction (corridor intersection)</option>
+      <option value="exit">Exit / Entrance</option>
+      <option value="transit">Transit (Metra / CTA)</option>
+      <option value="restaurant">Restaurant / Cafe</option>
+      <option value="retail">Retail / Shop</option>
+      <option value="restroom">Restroom</option>
+      <option value="parking">Parking</option>
+      <option value="landmark">Landmark / Building</option>
+    </select>
+  </div>
+  <div class="form-actions">
+    <button id="btn-confirm" onclick="confirmNode()">Add (Enter)</button>
+    <button onclick="cancelNode()">Cancel (Esc)</button>
+  </div>
+</div>
+
+<!-- Edge tooltip -->
+<div id="edge-tooltip"></div>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+// State
+// ────────────────────────────────────────────────────────────────
+const state = {
+  nodes: [],
+  edges: [],
+  mode: 'add-node',
+  selectedNode: null,
+  edgeStart: null,
+  imageLoaded: false,
+  imageWidth: 0,
+  imageHeight: 0,
+  pan: { x: 0, y: 0 },
+  zoom: 1,
+  dragging: null,
+  dragOffset: { x: 0, y: 0 },
+  isPanning: false,
+  panStart: { x: 0, y: 0 },
+  nodeCounter: 0,
+  pendingImgPos: null,
+  showLabels: true,
+  history: [],
+  currentTab: 'nodes',
+  searchText: '',
+};
+
+// ────────────────────────────────────────────────────────────────
+// Node type config
+// ────────────────────────────────────────────────────────────────
+const NODE_TYPES = {
+  junction:   { color: '#888888', radius: 5,  showLabel: false },
+  exit:       { color: '#ff8c00', radius: 9,  showLabel: true  },
+  transit:    { color: '#2196f3', radius: 10, showLabel: true  },
+  restaurant: { color: '#f44336', radius: 9,  showLabel: true  },
+  retail:     { color: '#9c27b0', radius: 8,  showLabel: true  },
+  restroom:   { color: '#00bcd4', radius: 8,  showLabel: true  },
+  parking:    { color: '#78909c', radius: 8,  showLabel: true  },
+  landmark:   { color: '#ffc107', radius: 10, showLabel: true  },
+};
+
+// ────────────────────────────────────────────────────────────────
+// DOM refs
+// ────────────────────────────────────────────────────────────────
+const canvasContainer = document.getElementById('canvas-container');
+const mapWrapper      = document.getElementById('map-wrapper');
+const mapImage        = document.getElementById('map-image');
+const svgOverlay      = document.getElementById('svg-overlay');
+const nodeForm        = document.getElementById('node-form');
+const uploadPrompt    = document.getElementById('upload-prompt');
+const statusText      = document.getElementById('status-text');
+const statusMode      = document.getElementById('status-mode');
+const edgeTooltip     = document.getElementById('edge-tooltip');
+
+// ────────────────────────────────────────────────────────────────
+// File upload
+// ────────────────────────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  mapImage.onload = () => {
+    state.imageWidth  = mapImage.naturalWidth;
+    state.imageHeight = mapImage.naturalHeight;
+    state.imageLoaded = true;
+    svgOverlay.setAttribute('width',  state.imageWidth);
+    svgOverlay.setAttribute('height', state.imageHeight);
+    svgOverlay.style.width  = state.imageWidth  + 'px';
+    svgOverlay.style.height = state.imageHeight + 'px';
+    uploadPrompt.style.display = 'none';
+    fitToView();
+    setStatus('Map loaded — click anywhere to place a node.');
+  };
+  mapImage.src = url;
+  e.target.value = '';
+});
+
+// ────────────────────────────────────────────────────────────────
+// Mode
+// ────────────────────────────────────────────────────────────────
+function setMode(mode) {
+  state.mode = mode;
+  state.edgeStart = null;
+  state.pendingImgPos = null;
+  state.selectedNode = null;
+  hideNodeForm();
+  document.querySelectorAll('#mode-buttons button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + mode).classList.add('active');
+  const cursors = { 'add-node': 'crosshair', 'add-edge': 'crosshair', 'select': 'default', 'delete': 'crosshair' };
+  canvasContainer.style.cursor = cursors[mode];
+  const labels = { 'add-node': 'Add Node', 'add-edge': 'Add Edge', 'select': 'Select / Move', 'delete': 'Delete' };
+  statusMode.textContent = 'Mode: ' + labels[mode];
+  render();
+  renderSidebar();
+}
+
+// ────────────────────────────────────────────────────────────────
+// Coordinate conversion
+// ────────────────────────────────────────────────────────────────
+function screenToImage(clientX, clientY) {
+  const rect = canvasContainer.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left - state.pan.x) / state.zoom,
+    y: (clientY - rect.top  - state.pan.y) / state.zoom,
+  };
+}
+
+// ────────────────────────────────────────────────────────────────
+// Canvas mouse events
+// ────────────────────────────────────────────────────────────────
+canvasContainer.addEventListener('mousedown', onMouseDown);
+canvasContainer.addEventListener('mousemove', onMouseMove);
+canvasContainer.addEventListener('mouseup',   onMouseUp);
+canvasContainer.addEventListener('wheel',     onWheel, { passive: false });
+canvasContainer.addEventListener('contextmenu', e => { e.preventDefault(); cancelAction(); });
+
+function onMouseDown(e) {
+  if (!state.imageLoaded) return;
+  if (e.button === 2) return;  // right-click handled by contextmenu
+
+  const imgPos = screenToImage(e.clientX, e.clientY);
+
+  // Middle-click or Alt+Left = pan
+  if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    startPan(e);
+    return;
+  }
+
+  // ── Add Node ──
+  if (state.mode === 'add-node') {
+    if (isOutOfBounds(imgPos)) return;
+    state.pendingImgPos = imgPos;
+    showNodeForm(e.clientX, e.clientY);
+    return;
+  }
+
+  // ── Add Edge ──
+  if (state.mode === 'add-edge') {
+    const hit = hitTestNode(imgPos);
+    if (!hit) return;
+    if (!state.edgeStart) {
+      state.edgeStart = hit;
+      setStatus(`Edge start: "${hit.name || 'junction'}" — now click the destination node.`);
+    } else if (state.edgeStart.id !== hit.id) {
+      addEdge(state.edgeStart, hit);
+      // Keep edgeStart so user can fan out edges from same node with Shift
+      if (!e.shiftKey) state.edgeStart = hit;
+    }
+    render();
+    return;
+  }
+
+  // ── Select ──
+  if (state.mode === 'select') {
+    const hit = hitTestNode(imgPos);
+    if (hit) {
+      state.selectedNode = hit;
+      state.dragging = hit;
+      state.dragOffset = { x: imgPos.x - hit.x, y: imgPos.y - hit.y };
+    } else {
+      state.selectedNode = null;
+      startPan(e);
+    }
+    render();
+    renderSidebar();
+    return;
+  }
+
+  // ── Delete ──
+  if (state.mode === 'delete') {
+    const hitN = hitTestNode(imgPos);
+    if (hitN) {
+      saveHistory();
+      deleteNode(hitN.id);
+      render();
+      renderSidebar();
+      setStatus(`Deleted "${hitN.name || 'junction'}".`);
+      return;
+    }
+    const hitE = hitTestEdge(imgPos);
+    if (hitE) {
+      saveHistory();
+      state.edges = state.edges.filter(ed => ed !== hitE);
+      render();
+      renderSidebar();
+      setStatus('Edge deleted.');
+    }
+  }
+}
+
+function onMouseMove(e) {
+  if (state.isPanning) {
+    state.pan.x = e.clientX - state.panStart.x;
+    state.pan.y = e.clientY - state.panStart.y;
+    applyTransform();
+    return;
+  }
+
+  if (state.dragging && state.mode === 'select') {
+    const imgPos = screenToImage(e.clientX, e.clientY);
+    state.dragging.x = Math.round(Math.max(0, Math.min(state.imageWidth,  imgPos.x - state.dragOffset.x)));
+    state.dragging.y = Math.round(Math.max(0, Math.min(state.imageHeight, imgPos.y - state.dragOffset.y)));
+    // Update edges connected to this node (distances auto-recalc on render)
+    render();
+    return;
+  }
+
+  // Edge tooltip on hover (delete/select modes)
+  if (state.mode === 'delete' || state.mode === 'select') {
+    const imgPos = screenToImage(e.clientX, e.clientY);
+    const hitE = hitTestEdge(imgPos);
+    if (hitE) {
+      const a = state.nodes.find(n => n.id === hitE.from);
+      const b = state.nodes.find(n => n.id === hitE.to);
+      edgeTooltip.style.display = 'block';
+      edgeTooltip.style.left = (e.clientX + 14) + 'px';
+      edgeTooltip.style.top  = (e.clientY - 22) + 'px';
+      edgeTooltip.textContent = `${a ? (a.name || 'jx') : '?'} → ${b ? (b.name || 'jx') : '?'} (${hitE.distance}px)`;
+    } else {
+      edgeTooltip.style.display = 'none';
+    }
+  } else {
+    edgeTooltip.style.display = 'none';
+  }
+}
+
+function onMouseUp(e) {
+  if (state.dragging) {
+    saveHistory();
+    // Recalculate edge distances for moved node
+    recalcEdgesForNode(state.dragging.id);
+    state.dragging = null;
+    render();
+  }
+  if (state.isPanning) {
+    state.isPanning = false;
+    const cursors = { 'add-node': 'crosshair', 'add-edge': 'crosshair', 'select': 'default', 'delete': 'crosshair' };
+    canvasContainer.style.cursor = cursors[state.mode];
+  }
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  const newZoom = Math.max(0.08, Math.min(10, state.zoom * factor));
+  const rect = canvasContainer.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  state.pan.x = mx - (mx - state.pan.x) * (newZoom / state.zoom);
+  state.pan.y = my - (my - state.pan.y) * (newZoom / state.zoom);
+  state.zoom = newZoom;
+  applyTransform();
+}
+
+function startPan(e) {
+  state.isPanning = true;
+  state.panStart = { x: e.clientX - state.pan.x, y: e.clientY - state.pan.y };
+  canvasContainer.style.cursor = 'grabbing';
+}
+
+function applyTransform() {
+  mapWrapper.style.transform = `translate(${state.pan.x}px,${state.pan.y}px) scale(${state.zoom})`;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Hit testing
+// ────────────────────────────────────────────────────────────────
+function hitTestNode(imgPos) {
+  const thresh = 14 / state.zoom;
+  for (let i = state.nodes.length - 1; i >= 0; i--) {
+    const n = state.nodes[i];
+    if (Math.hypot(n.x - imgPos.x, n.y - imgPos.y) < thresh) return n;
+  }
+  return null;
+}
+
+function hitTestEdge(imgPos) {
+  const thresh = 7 / state.zoom;
+  for (const edge of state.edges) {
+    const a = state.nodes.find(n => n.id === edge.from);
+    const b = state.nodes.find(n => n.id === edge.to);
+    if (a && b && distToSegment(imgPos, a, b) < thresh) return edge;
+  }
+  return null;
+}
+
+function distToSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const lenSq = dx*dx + dy*dy;
+  if (lenSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  const t = Math.max(0, Math.min(1, ((p.x - a.x)*dx + (p.y - a.y)*dy) / lenSq));
+  return Math.hypot(p.x - (a.x + t*dx), p.y - (a.y + t*dy));
+}
+
+function isOutOfBounds(pos) {
+  return pos.x < 0 || pos.y < 0 || pos.x > state.imageWidth || pos.y > state.imageHeight;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Node form
+// ────────────────────────────────────────────────────────────────
+function showNodeForm(screenX, screenY) {
+  document.getElementById('form-name').value = '';
+  document.getElementById('form-type').value = 'junction';
+  const rect = canvasContainer.getBoundingClientRect();
+  let fx = screenX + 14;
+  let fy = screenY - 20;
+  if (fx + 256 > rect.right)  fx = screenX - 262;
+  if (fy + 200 > rect.bottom) fy = screenY - 205;
+  if (fy < rect.top) fy = rect.top + 4;
+  nodeForm.style.left    = fx + 'px';
+  nodeForm.style.top     = fy + 'px';
+  nodeForm.style.display = 'block';
+  setTimeout(() => document.getElementById('form-name').focus(), 40);
+}
+
+function confirmNode() {
+  if (!state.pendingImgPos) return;
+  const name = document.getElementById('form-name').value.trim();
+  const type = document.getElementById('form-type').value;
+  saveHistory();
+  state.nodes.push({
+    id:   'n' + (++state.nodeCounter),
+    name,
+    type,
+    x: Math.round(state.pendingImgPos.x),
+    y: Math.round(state.pendingImgPos.y),
+  });
+  state.pendingImgPos = null;
+  hideNodeForm();
+  render();
+  renderSidebar();
+  setStatus(`Added ${type}${name ? ': ' + name : ''}.`);
+}
+
+function cancelNode() {
+  state.pendingImgPos = null;
+  hideNodeForm();
+}
+
+function hideNodeForm() {
+  nodeForm.style.display = 'none';
+}
+
+// ────────────────────────────────────────────────────────────────
+// Keyboard shortcuts
+// ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  // Form open
+  if (nodeForm.style.display === 'block') {
+    if (e.key === 'Enter')  { confirmNode(); return; }
+    if (e.key === 'Escape') { cancelNode();  return; }
+    return;
+  }
+  if (e.key === 'Escape') { cancelAction(); return; }
+  if (e.ctrlKey && e.key === 'z') { undo(); return; }
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  const km = { n: 'add-node', e: 'add-edge', s: 'select', d: 'delete' };
+  if (km[e.key]) { setMode(km[e.key]); return; }
+  if (e.key === 'Delete' && state.selectedNode) {
+    saveHistory();
+    deleteNode(state.selectedNode.id);
+    state.selectedNode = null;
+    render();
+    renderSidebar();
+  }
+  if (e.key === 'l') toggleLabels();
+  if (e.key === 'f') fitToView();
+});
+
+function cancelAction() {
+  state.edgeStart = null;
+  state.pendingImgPos = null;
+  hideNodeForm();
+  render();
+  setStatus('Cancelled.');
+}
+
+// ────────────────────────────────────────────────────────────────
+// Graph operations
+// ────────────────────────────────────────────────────────────────
+function addEdge(a, b) {
+  const dup = state.edges.some(ed =>
+    (ed.from === a.id && ed.to === b.id) || (ed.from === b.id && ed.to === a.id)
+  );
+  if (dup) { setStatus('Edge already exists between these nodes.'); return; }
+  saveHistory();
+  const dist = Math.round(Math.hypot(b.x - a.x, b.y - a.y));
+  state.edges.push({ from: a.id, to: b.id, distance: dist });
+  renderSidebar();
+  setStatus(`Edge added (${dist}px). Shift+click to fan more edges from the same node.`);
+}
+
+function deleteNode(id) {
+  state.nodes = state.nodes.filter(n => n.id !== id);
+  state.edges = state.edges.filter(ed => ed.from !== id && ed.to !== id);
+}
+
+function recalcEdgesForNode(id) {
+  for (const ed of state.edges) {
+    if (ed.from === id || ed.to === id) {
+      const a = state.nodes.find(n => n.id === ed.from);
+      const b = state.nodes.find(n => n.id === ed.to);
+      if (a && b) ed.distance = Math.round(Math.hypot(b.x - a.x, b.y - a.y));
+    }
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+// Rendering (SVG)
+// ────────────────────────────────────────────────────────────────
+function render() {
+  const svg = svgOverlay;
+  svg.innerHTML = '';
+
+  const ns = 'http://www.w3.org/2000/svg';
+
+  // Edges
+  for (const edge of state.edges) {
+    const a = state.nodes.find(n => n.id === edge.from);
+    const b = state.nodes.find(n => n.id === edge.to);
+    if (!a || !b) continue;
+    const isHighlighted = state.edgeStart &&
+      (state.edgeStart.id === edge.from || state.edgeStart.id === edge.to);
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    line.setAttribute('stroke', isHighlighted ? '#4fc3f7' : '#3a8a3a');
+    line.setAttribute('stroke-width', isHighlighted ? 2.5 : 2);
+    line.setAttribute('stroke-opacity', '0.85');
+    svg.appendChild(line);
+  }
+
+  // Edge-start pulse ring
+  if (state.edgeStart) {
+    const n = state.edgeStart;
+    const ring = document.createElementNS(ns, 'circle');
+    ring.setAttribute('cx', n.x); ring.setAttribute('cy', n.y);
+    ring.setAttribute('r', 18);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', '#4fc3f7');
+    ring.setAttribute('stroke-width', '2');
+    ring.setAttribute('stroke-dasharray', '4 3');
+    svg.appendChild(ring);
+  }
+
+  // Nodes
+  for (const node of state.nodes) {
+    const cfg = NODE_TYPES[node.type] || NODE_TYPES.junction;
+    const isSelected  = state.selectedNode && state.selectedNode.id === node.id;
+    const isEdgeStart = state.edgeStart    && state.edgeStart.id    === node.id;
+
+    const g = document.createElementNS(ns, 'g');
+
+    // Selection ring
+    if (isSelected) {
+      const ring = document.createElementNS(ns, 'circle');
+      ring.setAttribute('cx', node.x); ring.setAttribute('cy', node.y);
+      ring.setAttribute('r', cfg.radius + 6);
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', '#ffffff');
+      ring.setAttribute('stroke-width', '1.5');
+      ring.setAttribute('stroke-opacity', '0.5');
+      g.appendChild(ring);
+    }
+
+    const circle = document.createElementNS(ns, 'circle');
+    circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+    circle.setAttribute('r',  cfg.radius);
+    circle.setAttribute('fill', cfg.color);
+    circle.setAttribute('stroke', isEdgeStart ? '#4fc3f7' : 'rgba(255,255,255,0.6)');
+    circle.setAttribute('stroke-width', isEdgeStart ? '2.5' : '1');
+    g.appendChild(circle);
+
+    // Label
+    if (state.showLabels && node.name && (cfg.showLabel || node.type === 'junction')) {
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('x', node.x);
+      text.setAttribute('y', node.y - cfg.radius - 5);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-size', '11');
+      text.setAttribute('fill', '#ffffff');
+      text.setAttribute('paint-order', 'stroke');
+      text.setAttribute('stroke', '#000');
+      text.setAttribute('stroke-width', '3');
+      text.setAttribute('stroke-linejoin', 'round');
+      text.textContent = node.name;
+      g.appendChild(text);
+    }
+
+    svg.appendChild(g);
+  }
+
+  updateStats();
+}
+
+function toggleLabels() {
+  state.showLabels = !state.showLabels;
+  render();
+  setStatus('Labels ' + (state.showLabels ? 'shown' : 'hidden') + '.');
+}
+
+// ────────────────────────────────────────────────────────────────
+// Sidebar
+// ────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  if (state.currentTab === 'nodes') renderNodeList();
+  else renderEdgeList();
+  updateStats();
+}
+
+function renderNodeList() {
+  const list   = document.getElementById('node-list');
+  const search = state.searchText.toLowerCase();
+  const items  = state.nodes.filter(n =>
+    !search || n.name.toLowerCase().includes(search) || n.type.includes(search)
+  );
+  list.innerHTML = items.map(n => {
+    const cfg = NODE_TYPES[n.type] || NODE_TYPES.junction;
+    const sel = state.selectedNode && state.selectedNode.id === n.id;
+    return `<div class="node-item ${sel ? 'selected' : ''}" onclick="selectFromSidebar('${n.id}')">
+      <div class="node-dot" style="background:${cfg.color}"></div>
+      <span class="node-name">${n.name || '<junction>'}</span>
+      <span class="node-type-tag">${n.type}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderEdgeList() {
+  const list = document.getElementById('node-list');
+  list.innerHTML = state.edges.map(ed => {
+    const a = state.nodes.find(n => n.id === ed.from);
+    const b = state.nodes.find(n => n.id === ed.to);
+    if (!a || !b) return '';
+    return `<div class="node-item">
+      <span class="node-name">${a.name || 'jx'} &rarr; ${b.name || 'jx'}</span>
+      <span class="node-type-tag">${ed.distance}px</span>
+    </div>`;
+  }).join('');
+}
+
+function selectFromSidebar(id) {
+  state.selectedNode = state.nodes.find(n => n.id === id) || null;
+  if (state.selectedNode && state.mode !== 'select') setMode('select');
+  if (state.selectedNode) {
+    const rect = canvasContainer.getBoundingClientRect();
+    state.pan.x = rect.width  / 2 - state.selectedNode.x * state.zoom;
+    state.pan.y = rect.height / 2 - state.selectedNode.y * state.zoom;
+    applyTransform();
+  }
+  render();
+  renderSidebar();
+}
+
+function filterNodes() {
+  state.searchText = document.getElementById('search-input').value;
+  renderSidebar();
+}
+
+function showTab(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'nodes') || (i === 1 && tab === 'edges'));
+  });
+  renderSidebar();
+}
+
+function updateStats() {
+  document.getElementById('stat-nodes').textContent = state.nodes.length + ' nodes';
+  document.getElementById('stat-edges').textContent = state.edges.length + ' edges';
+}
+
+// ────────────────────────────────────────────────────────────────
+// View controls
+// ────────────────────────────────────────────────────────────────
+function fitToView() {
+  if (!state.imageLoaded) return;
+  const rect   = canvasContainer.getBoundingClientRect();
+  const scaleX = rect.width  / state.imageWidth;
+  const scaleY = rect.height / state.imageHeight;
+  state.zoom  = Math.min(scaleX, scaleY) * 0.96;
+  state.pan.x = (rect.width  - state.imageWidth  * state.zoom) / 2;
+  state.pan.y = (rect.height - state.imageHeight * state.zoom) / 2;
+  applyTransform();
+}
+
+function adjustZoom(delta) {
+  const rect = canvasContainer.getBoundingClientRect();
+  const cx = rect.width / 2, cy = rect.height / 2;
+  const newZoom = Math.max(0.08, Math.min(10, state.zoom + delta));
+  state.pan.x = cx - (cx - state.pan.x) * (newZoom / state.zoom);
+  state.pan.y = cy - (cy - state.pan.y) * (newZoom / state.zoom);
+  state.zoom = newZoom;
+  applyTransform();
+}
+
+// ────────────────────────────────────────────────────────────────
+// Undo history
+// ────────────────────────────────────────────────────────────────
+function saveHistory() {
+  state.history.push({
+    nodes:   JSON.parse(JSON.stringify(state.nodes)),
+    edges:   JSON.parse(JSON.stringify(state.edges)),
+    counter: state.nodeCounter,
+  });
+  if (state.history.length > 60) state.history.shift();
+}
+
+function undo() {
+  if (!state.history.length) { setStatus('Nothing to undo.'); return; }
+  const prev = state.history.pop();
+  state.nodes = prev.nodes;
+  state.edges = prev.edges;
+  state.nodeCounter = prev.counter;
+  state.selectedNode = null;
+  render();
+  renderSidebar();
+  setStatus('Undone.');
+}
+
+// ────────────────────────────────────────────────────────────────
+// Export / Import
+// ────────────────────────────────────────────────────────────────
+function exportJSON() {
+  if (!state.nodes.length) { setStatus('No nodes to export yet.'); return; }
+  const data = {
+    meta: {
+      imageWidth:  state.imageWidth,
+      imageHeight: state.imageHeight,
+      nodeCount:   state.nodes.length,
+      edgeCount:   state.edges.length,
+      exportedAt:  new Date().toISOString(),
+    },
+    nodes: state.nodes,
+    edges: state.edges,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pedway_graph.json';
+  a.click();
+  setStatus(`Exported ${state.nodes.length} nodes, ${state.edges.length} edges → pedway_graph.json`);
+}
+
+function loadJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      saveHistory();
+      state.nodes = data.nodes || [];
+      state.edges = data.edges || [];
+      state.nodeCounter = Math.max(0, ...state.nodes.map(n => parseInt(n.id.replace('n', '')) || 0));
+      render();
+      renderSidebar();
+      setStatus(`Imported ${state.nodes.length} nodes, ${state.edges.length} edges.`);
+    } catch {
+      alert('Could not parse JSON file.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ────────────────────────────────────────────────────────────────
+// Status
+// ────────────────────────────────────────────────────────────────
+function setStatus(msg) {
+  statusText.textContent = msg;
+}
+
+// ────────────────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────────────────
+render();
+renderSidebar();
+</script>
+</body>
+</html>
