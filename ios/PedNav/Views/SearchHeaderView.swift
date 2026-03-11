@@ -10,9 +10,14 @@ struct SearchHeaderView: View {
                 // Logo / icon
                 logoView
 
-                Text("PedNav")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.pedText)
+                HStack(spacing: 0) {
+                    Text("Ped")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.pedText)
+                    Text("Nav")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.pedAccent)
+                }
 
                 Spacer()
 
@@ -32,6 +37,7 @@ struct SearchHeaderView: View {
                 label: "From",
                 dotColor: .pedFrom,
                 selectedNode: viewModel.fromNode,
+                excludeNodeId: viewModel.toNode?.id,
                 isActive: viewModel.activeInput == .from,
                 groups: viewModel.pickerGroups,
                 placeholder: "Select start...",
@@ -59,6 +65,7 @@ struct SearchHeaderView: View {
                 label: "To",
                 dotColor: .pedTo,
                 selectedNode: viewModel.toNode,
+                excludeNodeId: viewModel.fromNode?.id,
                 isActive: viewModel.activeInput == .to,
                 groups: viewModel.pickerGroups,
                 placeholder: "Select destination...",
@@ -84,14 +91,15 @@ struct SearchHeaderView: View {
 
     @ViewBuilder
     private var logoView: some View {
-        if let _ = UIImage(named: "logo") {
-            Image("logo")
+        // Load from bundle (logo.png lives in Resources/, not Assets.xcassets)
+        if let path = Bundle.main.path(forResource: "logo", ofType: "png"),
+           let uiImg = UIImage(contentsOfFile: path) {
+            Image(uiImage: uiImg)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 28, height: 28)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
         } else {
-            // Fallback icon
             Image(systemName: "map.fill")
                 .font(.system(size: 20))
                 .foregroundColor(.pedAccent)
@@ -144,6 +152,7 @@ private struct LocationRow: View {
     let label: String
     let dotColor: Color
     let selectedNode: MapNode?
+    let excludeNodeId: String?
     let isActive: Bool
     let groups: [(groupName: String, type: String, nodes: [MapNode])]
     let placeholder: String
@@ -215,6 +224,7 @@ private struct LocationRow: View {
         .sheet(isPresented: $isPickerShowing) {
             NodePickerSheet(
                 groups: groups,
+                excludeNodeId: excludeNodeId,
                 onSelect: { node in
                     onSelect(node)
                     isPickerShowing = false
@@ -230,14 +240,15 @@ private struct LocationRow: View {
 
 private struct NodePickerSheet: View {
     let groups: [(groupName: String, type: String, nodes: [MapNode])]
+    let excludeNodeId: String?
     let onSelect: (MapNode) -> Void
     @State private var searchText = ""
 
     var filteredGroups: [(groupName: String, type: String, nodes: [MapNode])] {
-        if searchText.isEmpty { return groups }
         return groups.compactMap { g in
-            let filtered = g.nodes.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
+            let filtered = g.nodes.filter { node in
+                node.id != excludeNodeId &&
+                (searchText.isEmpty || node.name.localizedCaseInsensitiveContains(searchText))
             }
             if filtered.isEmpty { return nil }
             return (g.groupName, g.type, filtered)

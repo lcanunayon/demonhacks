@@ -55,6 +55,28 @@ struct ContentView: View {
                                 .ignoresSafeArea(edges: .bottom)
                         }
 
+                        // Labels toggle button (map view only)
+                        if viewModel.currentView == .map {
+                            VStack {
+                                Spacer()
+                                HStack {
+                                    Spacer()
+                                    Button(action: { viewModel.showLabels.toggle() }) {
+                                        Image(systemName: viewModel.showLabels ? "tag.fill" : "tag")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(viewModel.showLabels ? .pedAccent : .pedMuted)
+                                            .frame(width: 36, height: 36)
+                                            .background(Color.pedSurf)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(RoundedRectangle(cornerRadius: 8)
+                                                .strokeBorder(Color.pedBorder, lineWidth: 1))
+                                    }
+                                    .padding(.trailing, 12)
+                                    .padding(.bottom, 16)
+                                }
+                            }
+                        }
+
                         // Loading overlay
                         if !viewModel.isLoaded {
                             loadingOverlay

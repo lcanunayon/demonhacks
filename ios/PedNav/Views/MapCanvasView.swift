@@ -13,6 +13,7 @@ final class MapCanvasView: UIView {
     var fromNodeId: String? { didSet { setNeedsDisplay() } }
     var toNodeId: String? { didSet { setNeedsDisplay() } }
     var filterType: String = "all" { didSet { setNeedsDisplay() } }
+    var showLabels: Bool = true      { didSet { setNeedsDisplay() } }
     var nodeMap: [String: MapNode] = [:]
 
     var onNodeTapped: ((MapNode) -> Void)?
@@ -159,58 +160,65 @@ final class MapCanvasView: UIView {
             }
         }
 
-        // Draw edges
+        // Draw non-route edges
+        ctx.setLineCap(.round)
+        ctx.setLineJoin(.round)
         for edge in edges {
             guard let fromNode = nodeMap[edge.from],
                   let toNode = nodeMap[edge.to] else { continue }
             let isRoute = routeEdgeSet.contains("\(edge.from)-\(edge.to)")
-            if isRoute {
-                ctx.setStrokeColor(UIColor(red: 0x21/255.0, green: 0x96/255.0, blue: 0xF3/255.0, alpha: 1).cgColor)
-                ctx.setLineWidth(3.0 / zoom)
-            } else {
-                ctx.setStrokeColor(UIColor(white: 1, alpha: 0.10).cgColor)
-                ctx.setLineWidth(0.8 / zoom)
+            if !isRoute {
+                ctx.setStrokeColor(UIColor(white: 1, alpha: 0.08).cgColor)
+                ctx.setLineWidth(1.0 / zoom)
+                ctx.move(to: CGPoint(x: fromNode.x, y: fromNode.y))
+                ctx.addLine(to: CGPoint(x: toNode.x, y: toNode.y))
+                ctx.strokePath()
             }
-            ctx.move(to: CGPoint(x: fromNode.x, y: fromNode.y))
-            ctx.addLine(to: CGPoint(x: toNode.x, y: toNode.y))
-            ctx.strokePath()
         }
 
-        // Draw route chevrons
+        // Draw route — Google Maps style: dark border pass then bright fill pass
         if route.count > 1 {
-            let chevronSpacing: CGFloat = 60.0
-            ctx.setFillColor(UIColor(red: 0x21/255.0, green: 0x96/255.0, blue: 0xF3/255.0, alpha: 0.8).cgColor)
+            // Pass 1: dark shadow/border underneath
+            ctx.setStrokeColor(UIColor(red: 0x0D/255.0, green: 0x47/255.0, blue: 0xA1/255.0, alpha: 0.9).cgColor)
+            ctx.setLineWidth(14.0 / zoom)
+            ctx.setLineCap(.round)
+            ctx.setLineJoin(.round)
             for i in 0..<(route.count - 1) {
                 guard let a = nodeMap[route[i]], let b = nodeMap[route[i + 1]] else { continue }
-                let dx = b.x - a.x
-                let dy = b.y - a.y
-                let len = sqrt(dx * dx + dy * dy)
-                guard len > 0 else { continue }
-                let ux = dx / len, uy = dy / len
-                let angle = atan2(uy, ux)
-                let steps = Int(len / chevronSpacing)
-                for s in 1...max(1, steps) {
-                    let t = CGFloat(s) * chevronSpacing / len
-                    if t >= 1.0 { break }
-                    let cx = a.x + dx * t
-                    let cy = a.y + dy * t
-                    drawChevron(ctx: ctx, center: CGPoint(x: cx, y: cy), angle: angle, size: 5.0 / zoom)
-                }
+                ctx.move(to: CGPoint(x: a.x, y: a.y))
+                ctx.addLine(to: CGPoint(x: b.x, y: b.y))
+                ctx.strokePath()
+            }
+            // Pass 2: bright blue on top
+            ctx.setStrokeColor(UIColor(red: 0x21/255.0, green: 0x96/255.0, blue: 0xF3/255.0, alpha: 1).cgColor)
+            ctx.setLineWidth(9.0 / zoom)
+            for i in 0..<(route.count - 1) {
+                guard let a = nodeMap[route[i]], let b = nodeMap[route[i + 1]] else { continue }
+                ctx.move(to: CGPoint(x: a.x, y: a.y))
+                ctx.addLine(to: CGPoint(x: b.x, y: b.y))
+                ctx.strokePath()
             }
         }
 
         // Draw nodes
         let visibleNodes = filterType == "all" ? nodes : nodes.filter { $0.type == filterType }
+        let labelZoomThreshold: CGFloat = 0.12  // show labels above this zoom
+        let junctionZoomThreshold: CGFloat = 0.20
+
         for node in visibleNodes {
-            if zoom < 0.2 && node.type == "junction" { continue }
+            if zoom < junctionZoomThreshold && node.type == "junction" { continue }
 
             let isFrom = node.id == fromNodeId
             let isTo   = node.id == toNodeId
             let isOnRoute = route.contains(node.id)
 
-            var radius: CGFloat = node.type == "junction" ? 3.0 : 5.0
-            if isFrom || isTo { radius = 8.0 }
-            radius /= zoom
+            // Screen-space radius capped so nodes shrink when zoomed out
+            let baseScreenR: CGFloat = node.type == "junction" ? 2.5 : 4.5
+            let maxScreenR: CGFloat  = isFrom || isTo ? 9.0 : (node.type == "junction" ? 3.5 : 6.0)
+            let screenRadius = (isFrom || isTo)
+                ? min(9.0, max(5.0, 9.0 * zoom))
+                : min(maxScreenR, max(1.5, baseScreenR * min(1.0, zoom * 1.5)))
+            let radius = screenRadius / zoom
 
             let nodeColor: UIColor
             if isFrom {
@@ -218,59 +226,57 @@ final class MapCanvasView: UIView {
             } else if isTo {
                 nodeColor = UIColor(red: 0xF4/255.0, green: 0x43/255.0, blue: 0x36/255.0, alpha: 1)
             } else {
-                let c = node.color
-                nodeColor = uiColorFromSwiftColor(c)
+                nodeColor = uiColorFromSwiftColor(node.color)
             }
 
             let nr = CGRect(x: node.x - radius, y: node.y - radius,
                             width: radius * 2, height: radius * 2)
 
-            // Shadow for route nodes
-            if isOnRoute && !isFrom && !isTo {
-                ctx.setShadow(offset: .zero, blur: 4.0 / zoom,
-                              color: UIColor(red: 0x21/255.0, green: 0x96/255.0, blue: 0xF3/255.0, alpha: 0.6).cgColor)
-            } else {
-                ctx.setShadow(offset: .zero, blur: 0, color: nil)
-            }
-
+            ctx.setShadow(offset: .zero, blur: 0, color: nil)
             ctx.setFillColor(nodeColor.cgColor)
             ctx.fillEllipse(in: nr)
 
             if node.type != "junction" || isFrom || isTo {
-                ctx.setStrokeColor(UIColor.white.withAlphaComponent(0.4).cgColor)
-                ctx.setLineWidth(0.5 / zoom)
+                ctx.setStrokeColor(UIColor.white.withAlphaComponent(0.5).cgColor)
+                ctx.setLineWidth(0.8 / zoom)
                 ctx.strokeEllipse(in: nr)
             }
 
-            ctx.setShadow(offset: .zero, blur: 0, color: nil)
-
-            // Draw A/B labels
+            // A/B label for from/to
             if isFrom || isTo {
                 let label = isFrom ? "A" : "B"
-                let textColor = UIColor.white
                 let font = UIFont.boldSystemFont(ofSize: 7.0 / zoom)
-                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
+                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.white]
                 let str = NSAttributedString(string: label, attributes: attrs)
                 let strSize = str.size()
-                let textOrigin = CGPoint(x: node.x - strSize.width / 2,
-                                         y: node.y - strSize.height / 2)
-                str.draw(at: textOrigin)
+                str.draw(at: CGPoint(x: node.x - strSize.width / 2, y: node.y - strSize.height / 2))
+            }
+
+            // Name label for named nodes at sufficient zoom (only when labels enabled)
+            if showLabels && zoom >= labelZoomThreshold && node.type != "junction" && !isFrom && !isTo && !node.name.isEmpty {
+                let fontSize: CGFloat = 9.0 / zoom
+                let font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: UIColor.white
+                ]
+                let str = NSAttributedString(string: node.name, attributes: attrs)
+                let strSize = str.size()
+                let labelX = node.x - strSize.width / 2
+                let labelY = node.y + radius + (2.0 / zoom)
+
+                // Pill background for readability
+                let bgPad: CGFloat = 2.0 / zoom
+                let bgRect = CGRect(x: labelX - bgPad, y: labelY - bgPad,
+                                    width: strSize.width + bgPad * 2, height: strSize.height + bgPad * 2)
+                let bgPath = UIBezierPath(roundedRect: bgRect, cornerRadius: 2.0 / zoom)
+                UIColor.black.withAlphaComponent(0.55).setFill()
+                bgPath.fill()
+
+                str.draw(at: CGPoint(x: labelX, y: labelY))
             }
         }
 
-        ctx.restoreGState()
-    }
-
-    private func drawChevron(ctx: CGContext, center: CGPoint, angle: CGFloat, size: CGFloat) {
-        ctx.saveGState()
-        ctx.translateBy(x: center.x, y: center.y)
-        ctx.rotate(by: angle)
-        ctx.move(to: CGPoint(x: -size, y: -size * 0.6))
-        ctx.addLine(to: CGPoint(x: 0, y: 0))
-        ctx.addLine(to: CGPoint(x: -size, y: size * 0.6))
-        ctx.setLineWidth(1.5 / zoom)
-        ctx.setStrokeColor(UIColor(red: 0x21/255.0, green: 0x96/255.0, blue: 0xF3/255.0, alpha: 0.8).cgColor)
-        ctx.strokePath()
         ctx.restoreGState()
     }
 
@@ -336,8 +342,8 @@ struct MapCanvasRepresentable: UIViewRepresentable {
         uiView.fromNodeId = viewModel.fromNode?.id
         uiView.toNodeId   = viewModel.toNode?.id
         uiView.filterType = viewModel.filterType
+        uiView.showLabels = viewModel.showLabels
 
-        // Build nodeMap and edge list from all nodes + derive edges from route
         var nodeMap: [String: MapNode] = [:]
         for n in viewModel.nodes { nodeMap[n.id] = n }
         uiView.nodeMap = nodeMap

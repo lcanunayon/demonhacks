@@ -21,13 +21,19 @@ final class CameraPreviewView: UIView {
 
 final class AROverlayView: UIView {
 
-    var directionIcon: String = "↑" { didSet { setNeedsDisplay() } }
+    var directionIcon: String = "↑" {
+        didSet {
+            setNeedsDisplay()
+            directionLabel.text = simplifiedLabel(directionIcon)
+        }
+    }
     var instruction: String = "" { didSet { instructionLabel.text = instruction } }
     var onPrev: (() -> Void)?
     var onNext: (() -> Void)?
 
     // Pulsing ring layer
     private let pulseLayer = CAShapeLayer()
+    private let directionLabel = UILabel()   // Left / Right / Straight
     private let instructionLabel = UILabel()
     private let prevButton = UIButton(type: .system)
     private let nextButton = UIButton(type: .system)
@@ -52,9 +58,16 @@ final class AROverlayView: UIView {
     private func setupSubviews() {
         backgroundColor = .clear
 
-        // Instruction label
-        instructionLabel.textColor     = .white
-        instructionLabel.font          = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        // Direction label (Go Straight / Turn Left / Turn Right)
+        directionLabel.textColor     = .white
+        directionLabel.font          = UIFont.systemFont(ofSize: 22, weight: .bold)
+        directionLabel.textAlignment = .center
+        directionLabel.text          = "Go Straight"
+        addSubview(directionLabel)
+
+        // Instruction label (detail from step)
+        instructionLabel.textColor     = UIColor(white: 0.85, alpha: 1)
+        instructionLabel.font          = UIFont.systemFont(ofSize: 15, weight: .regular)
         instructionLabel.textAlignment = .center
         instructionLabel.numberOfLines = 2
         instructionLabel.backgroundColor = UIColor.black.withAlphaComponent(0.55)
@@ -104,17 +117,21 @@ final class AROverlayView: UIView {
         let w = bounds.width
         let h = bounds.height
 
-        // Arrow drawn in draw(_:) — center area
-        let arrowSize: CGFloat = 100
+        // Arrow is drawn in draw(_:) at center - slightly above midpoint
+        let arrowCenterY = h / 2 - 40
 
-        // Instruction label near bottom
-        let lblH: CGFloat = 60
-        instructionLabel.frame = CGRect(x: 20, y: h - 170, width: w - 40, height: lblH)
+        // Direction label above arrow
+        let dirH: CGFloat = 30
+        directionLabel.frame = CGRect(x: 20, y: arrowCenterY - 90, width: w - 40, height: dirH)
+
+        // Instruction label below arrow
+        let lblH: CGFloat = 50
+        instructionLabel.frame = CGRect(x: 20, y: arrowCenterY + 80, width: w - 40, height: lblH)
 
         // Buttons
         let btnW: CGFloat = 110
         let btnH: CGFloat = 44
-        let btnY = h - 95
+        let btnY = h - 90
         prevButton.frame = CGRect(x: 20, y: btnY, width: btnW, height: btnH)
         nextButton.frame = CGRect(x: w - btnW - 20, y: btnY, width: btnW, height: btnH)
 
@@ -133,12 +150,12 @@ final class AROverlayView: UIView {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
 
         let cx = rect.midX
-        let cy = rect.midY - 30 // slightly above center
+        let cy = rect.height / 2 - 40  // match layoutSubviews arrowCenterY
         let arrowLen: CGFloat = 70
         let arrowHeadLen: CGFloat = 22
         let arrowHeadWidth: CGFloat = 18
 
-        let angle = angleForIcon(directionIcon)
+        let angle = simplifiedAngle(directionIcon)
 
         ctx.saveGState()
         ctx.translateBy(x: cx, y: cy)
@@ -174,17 +191,22 @@ final class AROverlayView: UIView {
         ctx.restoreGState()
     }
 
-    private func angleForIcon(_ icon: String) -> CGFloat {
+    // Collapse all directions to Left / Right / Straight for AR display
+    private func simplifiedAngle(_ icon: String) -> CGFloat {
         switch icon {
-        case "↑", "▶": return 0
-        case "↓":       return .pi
-        case "←":       return -.pi / 2
-        case "→":       return  .pi / 2
-        case "↗":       return  .pi / 4
-        case "↖":       return -.pi / 4
-        case "↘":       return  .pi * 3 / 4
-        case "↙":       return -.pi * 3 / 4
-        default:        return 0
+        case "←", "↙", "↖": return -.pi / 2  // Left
+        case "→", "↘", "↗": return  .pi / 2  // Right
+        default:              return 0          // Straight (↑, ▶, ↓, ⚑, etc.)
+        }
+    }
+
+    private func simplifiedLabel(_ icon: String) -> String {
+        switch icon {
+        case "←", "↙", "↖": return "Turn Left"
+        case "→", "↘", "↗": return "Turn Right"
+        case "▶":             return "Start"
+        case "⚑":             return "Arrived"
+        default:              return "Go Straight"
         }
     }
 
@@ -217,7 +239,7 @@ final class AROverlayView: UIView {
     private func setupPulseLayer() {
         if pulseLayer.superlayer != nil { return }
         let cx = bounds.midX
-        let cy = bounds.midY - 30
+        let cy = bounds.height / 2 - 40
         let r: CGFloat = 56
         pulseLayer.path = UIBezierPath(ovalIn: CGRect(x: cx - r, y: cy - r,
                                                       width: r * 2, height: r * 2)).cgPath
@@ -296,6 +318,7 @@ struct AROverlayRepresentable: UIViewRepresentable {
     var directionIcon: String
     var instruction: String
     var stepText: String
+    var miniMapImage: UIImage?
     var onPrev: () -> Void
     var onNext: () -> Void
 
@@ -311,8 +334,9 @@ struct AROverlayRepresentable: UIViewRepresentable {
         if uiView.directionIcon != directionIcon {
             uiView.directionIcon = directionIcon
         }
-        uiView.instruction = instruction
-        uiView.stepText    = stepText
+        uiView.instruction   = instruction
+        uiView.stepText      = stepText
+        uiView.miniMapImage  = miniMapImage
     }
 }
 
@@ -344,6 +368,7 @@ struct ARCameraView: View {
                 directionIcon: viewModel.currentStep?.directionIcon ?? "↑",
                 instruction:   viewModel.currentStep?.instruction ?? "No active route",
                 stepText:      stepCountText,
+                miniMapImage:  viewModel.routeMiniMapImage,
                 onPrev:        { viewModel.prevStep() },
                 onNext:        { viewModel.nextStep() }
             )
