@@ -1,0 +1,415 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		42C3EED080B2DEEFC215140B /* PedNavApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1426210A7733E6B4A1CB525C /* PedNavApp.swift */; };
+		F0C05EB14E7196B32495A518 /* GraphModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD7B28039929A79C6E9E500 /* GraphModels.swift */; };
+		3BFED2DB8C1CE19A9A5177C2 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342367AA2CE2521765C3484 /* AppViewModel.swift */; };
+		24D4444BBCC471E53AD6996D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24711FE590D64A85C163274D /* ContentView.swift */; };
+		DF795BF0224997EAE0B8A65C /* MapCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE393F3730567918C530FD63 /* MapCanvasView.swift */; };
+		97D1AC8ECDD76845AD2A691C /* ARCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 908DC26ABB19C69CC2D169E9 /* ARCameraView.swift */; };
+		C3DAEA7907BCA2835EEE4DC6 /* RoutePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B11C13BE6B7842E4D5C24A /* RoutePanelView.swift */; };
+		FC93AD5C2B427BA047799416 /* FilterBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163A766D2964536314010937 /* FilterBarView.swift */; };
+		6FA835C980DDBFCE9904DCCF /* SearchHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4080127206A7B6D295227C /* SearchHeaderView.swift */; };
+		424BFC6605D9216B4B6D4C5E /* Graph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8250B02B7CF8805129277DD8 /* Graph.cpp */; };
+		7822144276F764E7F2C65F9B /* Pathfinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 77AADB0A86F3983033359BA6 /* Pathfinder.cpp */; };
+		DE0BD59E1A7729FC972CF4CD /* StepGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FFBA96C12D1452F6E676D96C /* StepGenerator.cpp */; };
+		BCD5AD2EE7180689A30B63F4 /* PedNavBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = B59D0A684509E140E377217F /* PedNavBridge.mm */; };
+		F97DA5034892CF2D1B7361D5 /* pedway_graph.json in Resources */ = {isa = PBXBuildFile; fileRef = 5694CEF5255AAB3043288497 /* pedway_graph.json */; };
+		65D127C09DB748ADAF019992 /* map.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 911390B60724510C1D5E32C9 /* map.jpg */; };
+		3E125EC83318F945813E411D /* directionarrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 8F47AFF23E983DCEE5362E4A /* directionarrow.png */; };
+		242ED3752F360BF82F0F1195 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = EAA615C817E4FB350387391D /* logo.png */; };
+		A33D938FC623AC1C6EBF7EC2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1113667453FA4EF942FE7CF6 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		27A4E74022F3B886202AE39C /* PedNav.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PedNav.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1426210A7733E6B4A1CB525C /* PedNavApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PedNavApp.swift"; sourceTree = "<group>"; };
+		CAD7B28039929A79C6E9E500 /* GraphModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GraphModels.swift"; sourceTree = "<group>"; };
+		9342367AA2CE2521765C3484 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppViewModel.swift"; sourceTree = "<group>"; };
+		24711FE590D64A85C163274D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+		DE393F3730567918C530FD63 /* MapCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MapCanvasView.swift"; sourceTree = "<group>"; };
+		908DC26ABB19C69CC2D169E9 /* ARCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ARCameraView.swift"; sourceTree = "<group>"; };
+		97B11C13BE6B7842E4D5C24A /* RoutePanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RoutePanelView.swift"; sourceTree = "<group>"; };
+		163A766D2964536314010937 /* FilterBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilterBarView.swift"; sourceTree = "<group>"; };
+		BA4080127206A7B6D295227C /* SearchHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SearchHeaderView.swift"; sourceTree = "<group>"; };
+		8250B02B7CF8805129277DD8 /* Graph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "Graph.cpp"; sourceTree = "<group>"; };
+		77AADB0A86F3983033359BA6 /* Pathfinder.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "Pathfinder.cpp"; sourceTree = "<group>"; };
+		FFBA96C12D1452F6E676D96C /* StepGenerator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "StepGenerator.cpp"; sourceTree = "<group>"; };
+		B59D0A684509E140E377217F /* PedNavBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "PedNavBridge.mm"; sourceTree = "<group>"; };
+		FA0565A1FDC2F76DE8315CB1 /* Graph.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = "Graph.hpp"; sourceTree = "<group>"; };
+		CC952447CCBC3B99D2D19FD6 /* Pathfinder.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = "Pathfinder.hpp"; sourceTree = "<group>"; };
+		0214AC98871711A0B2821FF9 /* StepGenerator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = "StepGenerator.hpp"; sourceTree = "<group>"; };
+		EC67793C915A41F3ACEF9EBE /* PedNavBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PedNavBridge.h"; sourceTree = "<group>"; };
+		ABDA7387626CBD50D677D249 /* PedNav-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PedNav-Bridging-Header.h"; sourceTree = "<group>"; };
+		6FB3A85ABBA1F42566A795E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		5694CEF5255AAB3043288497 /* pedway_graph.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pedway_graph.json"; sourceTree = "<group>"; };
+		911390B60724510C1D5E32C9 /* map.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "map.jpg"; sourceTree = "<group>"; };
+		8F47AFF23E983DCEE5362E4A /* directionarrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "directionarrow.png"; sourceTree = "<group>"; };
+		EAA615C817E4FB350387391D /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "logo.png"; sourceTree = "<group>"; };
+		1113667453FA4EF942FE7CF6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A6E8E7DF88D31078DBF4E18B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		71D2E56247FE75C3DCE9B609 = {
+			isa = PBXGroup;
+			children = (
+				538457569BA8F569050D569A /* PedNav */,
+				30772F61AC9BDC8631745269 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		30772F61AC9BDC8631745269 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				27A4E74022F3B886202AE39C /* PedNav.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		538457569BA8F569050D569A /* PedNav */ = {
+			isa = PBXGroup;
+			children = (
+				1426210A7733E6B4A1CB525C /* PedNavApp.swift */,
+				ABDA7387626CBD50D677D249 /* PedNav-Bridging-Header.h */,
+				6FB3A85ABBA1F42566A795E9 /* Info.plist */,
+				02BE1F040D6AD5FBE2009848 /* Core */,
+				C9E04F99D8E7C9D4D391AEF8 /* Models */,
+				EE1E649591DBDF61DE2E4396 /* ViewModels */,
+				9F58BDF7D4F04F6C4DC3CB6C /* Views */,
+				AE59D88C5460D2413CB142C1 /* Resources */,
+				ECB5E66D4CA145FC9C14ACB2 /* Assets */,
+			);
+			path = PedNav;
+			sourceTree = "<group>";
+		};
+		02BE1F040D6AD5FBE2009848 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				8250B02B7CF8805129277DD8 /* Graph.cpp */,
+				FA0565A1FDC2F76DE8315CB1 /* Graph.hpp */,
+				77AADB0A86F3983033359BA6 /* Pathfinder.cpp */,
+				CC952447CCBC3B99D2D19FD6 /* Pathfinder.hpp */,
+				FFBA96C12D1452F6E676D96C /* StepGenerator.cpp */,
+				0214AC98871711A0B2821FF9 /* StepGenerator.hpp */,
+				B59D0A684509E140E377217F /* PedNavBridge.mm */,
+				EC67793C915A41F3ACEF9EBE /* PedNavBridge.h */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		C9E04F99D8E7C9D4D391AEF8 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				CAD7B28039929A79C6E9E500 /* GraphModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		EE1E649591DBDF61DE2E4396 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				9342367AA2CE2521765C3484 /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		9F58BDF7D4F04F6C4DC3CB6C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				24711FE590D64A85C163274D /* ContentView.swift */,
+				DE393F3730567918C530FD63 /* MapCanvasView.swift */,
+				908DC26ABB19C69CC2D169E9 /* ARCameraView.swift */,
+				97B11C13BE6B7842E4D5C24A /* RoutePanelView.swift */,
+				163A766D2964536314010937 /* FilterBarView.swift */,
+				BA4080127206A7B6D295227C /* SearchHeaderView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AE59D88C5460D2413CB142C1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				5694CEF5255AAB3043288497 /* pedway_graph.json */,
+				911390B60724510C1D5E32C9 /* map.jpg */,
+				8F47AFF23E983DCEE5362E4A /* directionarrow.png */,
+				EAA615C817E4FB350387391D /* logo.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		ECB5E66D4CA145FC9C14ACB2 /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				1113667453FA4EF942FE7CF6 /* Assets.xcassets */,
+			);
+			name = Assets;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2CD7B11B8D78ECE2C1E7E3D9 /* PedNav */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F707ED8CFBC457F7F618ECA6 /* Build configuration list for PBXNativeTarget "PedNav" */;
+			buildPhases = (
+				65FA6119905E087A5E53253D /* Sources */,
+				7997A58CB6F97DD5FFDE7900 /* Resources */,
+				A6E8E7DF88D31078DBF4E18B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PedNav;
+			productName = PedNav;
+			productReference = 27A4E74022F3B886202AE39C /* PedNav.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5299AC4324DC18342A8CCD96 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					2CD7B11B8D78ECE2C1E7E3D9 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 9D908D8792E5642B2623649E /* Build configuration list for PBXProject "PedNav" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 71D2E56247FE75C3DCE9B609;
+			productRefGroup = 30772F61AC9BDC8631745269 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2CD7B11B8D78ECE2C1E7E3D9 /* PedNav */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7997A58CB6F97DD5FFDE7900 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F97DA5034892CF2D1B7361D5 /* pedway_graph.json in Resources */,
+				65D127C09DB748ADAF019992 /* map.jpg in Resources */,
+				3E125EC83318F945813E411D /* directionarrow.png in Resources */,
+				242ED3752F360BF82F0F1195 /* logo.png in Resources */,
+				A33D938FC623AC1C6EBF7EC2 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		65FA6119905E087A5E53253D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				42C3EED080B2DEEFC215140B /* PedNavApp.swift in Sources */,
+				F0C05EB14E7196B32495A518 /* GraphModels.swift in Sources */,
+				3BFED2DB8C1CE19A9A5177C2 /* AppViewModel.swift in Sources */,
+				24D4444BBCC471E53AD6996D /* ContentView.swift in Sources */,
+				DF795BF0224997EAE0B8A65C /* MapCanvasView.swift in Sources */,
+				97D1AC8ECDD76845AD2A691C /* ARCameraView.swift in Sources */,
+				C3DAEA7907BCA2835EEE4DC6 /* RoutePanelView.swift in Sources */,
+				FC93AD5C2B427BA047799416 /* FilterBarView.swift in Sources */,
+				6FA835C980DDBFCE9904DCCF /* SearchHeaderView.swift in Sources */,
+				424BFC6605D9216B4B6D4C5E /* Graph.cpp in Sources */,
+				7822144276F764E7F2C65F9B /* Pathfinder.cpp in Sources */,
+				DE0BD59E1A7729FC972CF4CD /* StepGenerator.cpp in Sources */,
+				BCD5AD2EE7180689A30B63F4 /* PedNavBridge.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		9B78CAAD775A7B1ADCDDB4CB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		67A65AB35555E026329D87C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		5C1FCF821166A8E947DC58DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSET_CATALOG_COMPILER_OPTIMIZATION = space;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PedNav/Core";
+				INFOPLIST_FILE = PedNav/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LE_APPLICATION_GROUP_IDENTIFIER = "";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pednav.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "PedNav/PedNav-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D8A34C63742B602B66E1CD36 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSET_CATALOG_COMPILER_OPTIMIZATION = space;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PedNav/Core";
+				INFOPLIST_FILE = PedNav/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pednav.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "PedNav/PedNav-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9D908D8792E5642B2623649E /* Build configuration list for PBXProject "PedNav" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9B78CAAD775A7B1ADCDDB4CB /* Debug */,
+				67A65AB35555E026329D87C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F707ED8CFBC457F7F618ECA6 /* Build configuration list for PBXNativeTarget "PedNav" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C1FCF821166A8E947DC58DE /* Debug */,
+				D8A34C63742B602B66E1CD36 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 5299AC4324DC18342A8CCD96 /* Project object */;
+}
