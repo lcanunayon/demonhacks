@@ -103,7 +103,7 @@ final class MapCanvasView: UIView {
 
         let visibleNodes = filterType == "all" ? nodes : nodes.filter { $0.type == filterType }
         for node in visibleNodes {
-            if zoom < 0.2 && node.type == "junction" { continue }
+            if node.type == "junction" || node.type == "street_junction" { continue }
             let dx = node.x - mapPoint.x
             let dy = node.y - mapPoint.y
             let dist = sqrt(dx * dx + dy * dy)
@@ -206,15 +206,16 @@ final class MapCanvasView: UIView {
         let junctionZoomThreshold: CGFloat = 0.20
 
         for node in visibleNodes {
-            if zoom < junctionZoomThreshold && node.type == "junction" { continue }
+            let isRoutingOnly = node.type == "junction" || node.type == "street_junction"
+            if zoom < junctionZoomThreshold && isRoutingOnly { continue }
 
             let isFrom = node.id == fromNodeId
             let isTo   = node.id == toNodeId
             let isOnRoute = route.contains(node.id)
 
             // Screen-space radius capped so nodes shrink when zoomed out
-            let baseScreenR: CGFloat = node.type == "junction" ? 2.5 : 4.5
-            let maxScreenR: CGFloat  = isFrom || isTo ? 9.0 : (node.type == "junction" ? 3.5 : 6.0)
+            let baseScreenR: CGFloat = isRoutingOnly ? 2.5 : 4.5
+            let maxScreenR: CGFloat  = isFrom || isTo ? 9.0 : (isRoutingOnly ? 3.5 : 6.0)
             let screenRadius = (isFrom || isTo)
                 ? min(9.0, max(5.0, 9.0 * zoom))
                 : min(maxScreenR, max(1.5, baseScreenR * min(1.0, zoom * 1.5)))
@@ -236,7 +237,7 @@ final class MapCanvasView: UIView {
             ctx.setFillColor(nodeColor.cgColor)
             ctx.fillEllipse(in: nr)
 
-            if node.type != "junction" || isFrom || isTo {
+            if !isRoutingOnly || isFrom || isTo {
                 ctx.setStrokeColor(UIColor.white.withAlphaComponent(0.5).cgColor)
                 ctx.setLineWidth(0.8 / zoom)
                 ctx.strokeEllipse(in: nr)
@@ -253,7 +254,7 @@ final class MapCanvasView: UIView {
             }
 
             // Name label for named nodes at sufficient zoom (only when labels enabled)
-            if showLabels && zoom >= labelZoomThreshold && node.type != "junction" && !isFrom && !isTo && !node.name.isEmpty {
+            if showLabels && zoom >= labelZoomThreshold && !isRoutingOnly && !isFrom && !isTo && !node.name.isEmpty {
                 let fontSize: CGFloat = 9.0 / zoom
                 let font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
                 let attrs: [NSAttributedString.Key: Any] = [

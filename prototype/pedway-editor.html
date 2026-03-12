@@ -346,6 +346,7 @@ button.success:hover { background: #2a7a2a; }
       <div class="l-row"><div class="l-dot" style="background:#00bcd4"></div>Restroom</div>
       <div class="l-row"><div class="l-dot" style="background:#78909c"></div>Parking</div>
       <div class="l-row"><div class="l-dot" style="background:#ffc107"></div>Landmark</div>
+      <div class="l-row"><div class="l-dot" style="background:#4caf50"></div>Street Junction</div>
     </div>
 
     <!-- Zoom buttons -->
@@ -380,6 +381,7 @@ button.success:hover { background: #2a7a2a; }
       <option value="restroom">Restroom</option>
       <option value="parking">Parking</option>
       <option value="landmark">Landmark / Building</option>
+      <option value="street_junction">Street Junction (outdoor)</option>
     </select>
   </div>
   <div class="form-actions">
@@ -422,14 +424,15 @@ const state = {
 // Node type config
 // ────────────────────────────────────────────────────────────────
 const NODE_TYPES = {
-  junction:   { color: '#888888', radius: 5,  showLabel: false },
-  exit:       { color: '#ff8c00', radius: 9,  showLabel: true  },
-  transit:    { color: '#2196f3', radius: 10, showLabel: true  },
-  restaurant: { color: '#f44336', radius: 9,  showLabel: true  },
-  retail:     { color: '#9c27b0', radius: 8,  showLabel: true  },
-  restroom:   { color: '#00bcd4', radius: 8,  showLabel: true  },
-  parking:    { color: '#78909c', radius: 8,  showLabel: true  },
-  landmark:   { color: '#ffc107', radius: 10, showLabel: true  },
+  junction:        { color: '#888888', radius: 5,  showLabel: false },
+  exit:            { color: '#ff8c00', radius: 9,  showLabel: true  },
+  transit:         { color: '#2196f3', radius: 10, showLabel: true  },
+  restaurant:      { color: '#f44336', radius: 9,  showLabel: true  },
+  retail:          { color: '#9c27b0', radius: 8,  showLabel: true  },
+  restroom:        { color: '#00bcd4', radius: 8,  showLabel: true  },
+  parking:         { color: '#78909c', radius: 8,  showLabel: true  },
+  landmark:        { color: '#ffc107', radius: 10, showLabel: true  },
+  street_junction: { color: '#4caf50', radius: 7,  showLabel: false },
 };
 
 // ────────────────────────────────────────────────────────────────

@@ -21,6 +21,8 @@
 		DE0BD59E1A7729FC972CF4CD /* StepGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FFBA96C12D1452F6E676D96C /* StepGenerator.cpp */; };
 		BCD5AD2EE7180689A30B63F4 /* PedNavBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = B59D0A684509E140E377217F /* PedNavBridge.mm */; };
 		F97DA5034892CF2D1B7361D5 /* pedway_graph.json in Resources */ = {isa = PBXBuildFile; fileRef = 5694CEF5255AAB3043288497 /* pedway_graph.json */; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* street_graph.json in Resources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6B7C8D9E0F1A2 /* street_graph.json */; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* bridge_edges.json in Resources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* bridge_edges.json */; };
 		65D127C09DB748ADAF019992 /* map.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 911390B60724510C1D5E32C9 /* map.jpg */; };
 		3E125EC83318F945813E411D /* directionarrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 8F47AFF23E983DCEE5362E4A /* directionarrow.png */; };
 		242ED3752F360BF82F0F1195 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = EAA615C817E4FB350387391D /* logo.png */; };
@@ -49,6 +51,8 @@
 		ABDA7387626CBD50D677D249 /* PedNav-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PedNav-Bridging-Header.h"; sourceTree = "<group>"; };
 		6FB3A85ABBA1F42566A795E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
 		5694CEF5255AAB3043288497 /* pedway_graph.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pedway_graph.json"; sourceTree = "<group>"; };
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* street_graph.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "street_graph.json"; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* bridge_edges.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "bridge_edges.json"; sourceTree = "<group>"; };
 		911390B60724510C1D5E32C9 /* map.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "map.jpg"; sourceTree = "<group>"; };
 		8F47AFF23E983DCEE5362E4A /* directionarrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "directionarrow.png"; sourceTree = "<group>"; };
 		EAA615C817E4FB350387391D /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "logo.png"; sourceTree = "<group>"; };
@@ -146,6 +150,8 @@
 			isa = PBXGroup;
 			children = (
 				5694CEF5255AAB3043288497 /* pedway_graph.json */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* street_graph.json */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* bridge_edges.json */,
 				911390B60724510C1D5E32C9 /* map.jpg */,
 				8F47AFF23E983DCEE5362E4A /* directionarrow.png */,
 				EAA615C817E4FB350387391D /* logo.png */,
@@ -219,6 +225,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				F97DA5034892CF2D1B7361D5 /* pedway_graph.json in Resources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* street_graph.json in Resources */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* bridge_edges.json in Resources */,
 				65D127C09DB748ADAF019992 /* map.jpg in Resources */,
 				3E125EC83318F945813E411D /* directionarrow.png in Resources */,
 				242ED3752F360BF82F0F1195 /* logo.png in Resources */,

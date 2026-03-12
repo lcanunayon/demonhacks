@@ -1,0 +1,1014 @@
+window.BRIDGE_EDGES = {
+  "bridge_edges": [
+    {
+      "from": "n4",
+      "to": "s_n72",
+      "distance": 157
+    },
+    {
+      "from": "n4",
+      "to": "s_n71",
+      "distance": 166
+    },
+    {
+      "from": "n5",
+      "to": "s_n71",
+      "distance": 244
+    },
+    {
+      "from": "n5",
+      "to": "s_n72",
+      "distance": 256
+    },
+    {
+      "from": "n6",
+      "to": "s_n70",
+      "distance": 227
+    },
+    {
+      "from": "n7",
+      "to": "s_n78",
+      "distance": 160
+    },
+    {
+      "from": "n11",
+      "to": "s_n28",
+      "distance": 176
+    },
+    {
+      "from": "n11",
+      "to": "s_n27",
+      "distance": 180
+    },
+    {
+      "from": "n15",
+      "to": "s_n73",
+      "distance": 127
+    },
+    {
+      "from": "n15",
+      "to": "s_n72",
+      "distance": 185
+    },
+    {
+      "from": "n21",
+      "to": "s_n73",
+      "distance": 151
+    },
+    {
+      "from": "n21",
+      "to": "s_n72",
+      "distance": 158
+    },
+    {
+      "from": "n26",
+      "to": "s_n72",
+      "distance": 262
+    },
+    {
+      "from": "n49",
+      "to": "s_n69",
+      "distance": 201
+    },
+    {
+      "from": "n50",
+      "to": "s_n48",
+      "distance": 137
+    },
+    {
+      "from": "n50",
+      "to": "s_n37",
+      "distance": 219
+    },
+    {
+      "from": "n51",
+      "to": "s_n32",
+      "distance": 127
+    },
+    {
+      "from": "n51",
+      "to": "s_n84",
+      "distance": 253
+    },
+    {
+      "from": "n52",
+      "to": "s_n84",
+      "distance": 139
+    },
+    {
+      "from": "n52",
+      "to": "s_n85",
+      "distance": 262
+    },
+    {
+      "from": "n53",
+      "to": "s_n49",
+      "distance": 161
+    },
+    {
+      "from": "n53",
+      "to": "s_n50",
+      "distance": 206
+    },
+    {
+      "from": "n54",
+      "to": "s_n38",
+      "distance": 124
+    },
+    {
+      "from": "n54",
+      "to": "s_n39",
+      "distance": 151
+    },
+    {
+      "from": "n55",
+      "to": "s_n78",
+      "distance": 157
+    },
+    {
+      "from": "n55",
+      "to": "s_n79",
+      "distance": 246
+    },
+    {
+      "from": "n56",
+      "to": "s_n37",
+      "distance": 177
+    },
+    {
+      "from": "n56",
+      "to": "s_n89",
+      "distance": 281
+    },
+    {
+      "from": "n59",
+      "to": "s_n78",
+      "distance": 102
+    },
+    {
+      "from": "n65",
+      "to": "s_n72",
+      "distance": 161
+    },
+    {
+      "from": "n65",
+      "to": "s_n73",
+      "distance": 272
+    },
+    {
+      "from": "n66",
+      "to": "s_n72",
+      "distance": 74
+    },
+    {
+      "from": "n66",
+      "to": "s_n73",
+      "distance": 233
+    },
+    {
+      "from": "n67",
+      "to": "s_n72",
+      "distance": 79
+    },
+    {
+      "from": "n67",
+      "to": "s_n71",
+      "distance": 246
+    },
+    {
+      "from": "n68",
+      "to": "s_n72",
+      "distance": 153
+    },
+    {
+      "from": "n68",
+      "to": "s_n71",
+      "distance": 283
+    },
+    {
+      "from": "n69",
+      "to": "s_n72",
+      "distance": 216
+    },
+    {
+      "from": "n69",
+      "to": "s_n71",
+      "distance": 270
+    },
+    {
+      "from": "n70",
+      "to": "s_n72",
+      "distance": 105
+    },
+    {
+      "from": "n70",
+      "to": "s_n73",
+      "distance": 179
+    },
+    {
+      "from": "n71",
+      "to": "s_n72",
+      "distance": 221
+    },
+    {
+      "from": "n71",
+      "to": "s_n73",
+      "distance": 273
+    },
+    {
+      "from": "n87",
+      "to": "s_n70",
+      "distance": 192
+    },
+    {
+      "from": "n87",
+      "to": "s_n71",
+      "distance": 274
+    },
+    {
+      "from": "n109",
+      "to": "s_n59",
+      "distance": 52
+    },
+    {
+      "from": "n109",
+      "to": "s_n60",
+      "distance": 285
+    },
+    {
+      "from": "n111",
+      "to": "s_n69",
+      "distance": 201
+    },
+    {
+      "from": "n113",
+      "to": "s_n56",
+      "distance": 99
+    },
+    {
+      "from": "n113",
+      "to": "s_n46",
+      "distance": 224
+    },
+    {
+      "from": "n114",
+      "to": "s_n45",
+      "distance": 119
+    },
+    {
+      "from": "n114",
+      "to": "s_n55",
+      "distance": 205
+    },
+    {
+      "from": "n115",
+      "to": "s_n45",
+      "distance": 117
+    },
+    {
+      "from": "n115",
+      "to": "s_n55",
+      "distance": 201
+    },
+    {
+      "from": "n116",
+      "to": "s_n46",
+      "distance": 121
+    },
+    {
+      "from": "n116",
+      "to": "s_n56",
+      "distance": 204
+    },
+    {
+      "from": "n117",
+      "to": "s_n46",
+      "distance": 131
+    },
+    {
+      "from": "n117",
+      "to": "s_n56",
+      "distance": 197
+    },
+    {
+      "from": "n118",
+      "to": "s_n56",
+      "distance": 126
+    },
+    {
+      "from": "n118",
+      "to": "s_n46",
+      "distance": 199
+    },
+    {
+      "from": "n119",
+      "to": "s_n85",
+      "distance": 182
+    },
+    {
+      "from": "n119",
+      "to": "s_n84",
+      "distance": 227
+    },
+    {
+      "from": "n120",
+      "to": "s_n84",
+      "distance": 106
+    },
+    {
+      "from": "n120",
+      "to": "s_n32",
+      "distance": 205
+    },
+    {
+      "from": "n121",
+      "to": "s_n84",
+      "distance": 109
+    },
+    {
+      "from": "n121",
+      "to": "s_n83",
+      "distance": 220
+    },
+    {
+      "from": "n122",
+      "to": "s_n37",
+      "distance": 77
+    },
+    {
+      "from": "n122",
+      "to": "s_n48",
+      "distance": 245
+    },
+    {
+      "from": "n123",
+      "to": "s_n37",
+      "distance": 90
+    },
+    {
+      "from": "n123",
+      "to": "s_n89",
+      "distance": 250
+    },
+    {
+      "from": "n124",
+      "to": "s_n37",
+      "distance": 76
+    },
+    {
+      "from": "n124",
+      "to": "s_n89",
+      "distance": 286
+    },
+    {
+      "from": "n125",
+      "to": "s_n48",
+      "distance": 88
+    },
+    {
+      "from": "n125",
+      "to": "s_n58",
+      "distance": 256
+    },
+    {
+      "from": "n126",
+      "to": "s_n58",
+      "distance": 161
+    },
+    {
+      "from": "n126",
+      "to": "s_n48",
+      "distance": 177
+    },
+    {
+      "from": "n127",
+      "to": "s_n37",
+      "distance": 175
+    },
+    {
+      "from": "n141",
+      "to": "s_n56",
+      "distance": 159
+    },
+    {
+      "from": "n141",
+      "to": "s_n46",
+      "distance": 166
+    },
+    {
+      "from": "n142",
+      "to": "s_n56",
+      "distance": 160
+    },
+    {
+      "from": "n142",
+      "to": "s_n46",
+      "distance": 161
+    },
+    {
+      "from": "n143",
+      "to": "s_n45",
+      "distance": 154
+    },
+    {
+      "from": "n143",
+      "to": "s_n55",
+      "distance": 167
+    },
+    {
+      "from": "n144",
+      "to": "s_n45",
+      "distance": 153
+    },
+    {
+      "from": "n144",
+      "to": "s_n55",
+      "distance": 163
+    },
+    {
+      "from": "n145",
+      "to": "s_n84",
+      "distance": 194
+    },
+    {
+      "from": "n145",
+      "to": "s_n85",
+      "distance": 220
+    },
+    {
+      "from": "n146",
+      "to": "s_n49",
+      "distance": 130
+    },
+    {
+      "from": "n146",
+      "to": "s_n50",
+      "distance": 183
+    },
+    {
+      "from": "n147",
+      "to": "s_n38",
+      "distance": 97
+    },
+    {
+      "from": "n147",
+      "to": "s_n39",
+      "distance": 180
+    },
+    {
+      "from": "n148",
+      "to": "s_n39",
+      "distance": 90
+    },
+    {
+      "from": "n148",
+      "to": "s_n38",
+      "distance": 187
+    },
+    {
+      "from": "n149",
+      "to": "s_n39",
+      "distance": 124
+    },
+    {
+      "from": "n149",
+      "to": "s_n38",
+      "distance": 214
+    },
+    {
+      "from": "n150",
+      "to": "s_n50",
+      "distance": 141
+    },
+    {
+      "from": "n150",
+      "to": "s_n39",
+      "distance": 212
+    },
+    {
+      "from": "n151",
+      "to": "s_n50",
+      "distance": 113
+    },
+    {
+      "from": "n151",
+      "to": "s_n49",
+      "distance": 206
+    },
+    {
+      "from": "n152",
+      "to": "s_n39",
+      "distance": 129
+    },
+    {
+      "from": "n152",
+      "to": "s_n50",
+      "distance": 203
+    },
+    {
+      "from": "n153",
+      "to": "s_n39",
+      "distance": 114
+    },
+    {
+      "from": "n153",
+      "to": "s_n50",
+      "distance": 252
+    },
+    {
+      "from": "n154",
+      "to": "s_n39",
+      "distance": 222
+    },
+    {
+      "from": "n154",
+      "to": "s_n40",
+      "distance": 294
+    },
+    {
+      "from": "n155",
+      "to": "s_n50",
+      "distance": 218
+    },
+    {
+      "from": "n156",
+      "to": "s_n50",
+      "distance": 121
+    },
+    {
+      "from": "n156",
+      "to": "s_n39",
+      "distance": 240
+    },
+    {
+      "from": "n157",
+      "to": "s_n39",
+      "distance": 55
+    },
+    {
+      "from": "n157",
+      "to": "s_n38",
+      "distance": 205
+    },
+    {
+      "from": "n158",
+      "to": "s_n27",
+      "distance": 111
+    },
+    {
+      "from": "n158",
+      "to": "s_n38",
+      "distance": 207
+    },
+    {
+      "from": "n159",
+      "to": "s_n38",
+      "distance": 72
+    },
+    {
+      "from": "n159",
+      "to": "s_n39",
+      "distance": 228
+    },
+    {
+      "from": "n160",
+      "to": "s_n38",
+      "distance": 151
+    },
+    {
+      "from": "n160",
+      "to": "s_n49",
+      "distance": 182
+    },
+    {
+      "from": "n161",
+      "to": "s_n27",
+      "distance": 69
+    },
+    {
+      "from": "n161",
+      "to": "s_n28",
+      "distance": 228
+    },
+    {
+      "from": "n162",
+      "to": "s_n28",
+      "distance": 57
+    },
+    {
+      "from": "n162",
+      "to": "s_n27",
+      "distance": 239
+    },
+    {
+      "from": "n163",
+      "to": "s_n28",
+      "distance": 93
+    },
+    {
+      "from": "n163",
+      "to": "s_n39",
+      "distance": 228
+    },
+    {
+      "from": "n164",
+      "to": "s_n28",
+      "distance": 70
+    },
+    {
+      "from": "n164",
+      "to": "s_n39",
+      "distance": 235
+    },
+    {
+      "from": "n165",
+      "to": "s_n39",
+      "distance": 21
+    },
+    {
+      "from": "n165",
+      "to": "s_n38",
+      "distance": 273
+    },
+    {
+      "from": "n166",
+      "to": "s_n39",
+      "distance": 148
+    },
+    {
+      "from": "n166",
+      "to": "s_n50",
+      "distance": 165
+    },
+    {
+      "from": "n167",
+      "to": "s_n39",
+      "distance": 54
+    },
+    {
+      "from": "n167",
+      "to": "s_n50",
+      "distance": 279
+    },
+    {
+      "from": "n168",
+      "to": "s_n39",
+      "distance": 121
+    },
+    {
+      "from": "n168",
+      "to": "s_n50",
+      "distance": 298
+    },
+    {
+      "from": "n169",
+      "to": "s_n50",
+      "distance": 126
+    },
+    {
+      "from": "n169",
+      "to": "s_n39",
+      "distance": 290
+    },
+    {
+      "from": "n170",
+      "to": "s_n50",
+      "distance": 46
+    },
+    {
+      "from": "n170",
+      "to": "s_n39",
+      "distance": 269
+    },
+    {
+      "from": "n171",
+      "to": "s_n39",
+      "distance": 184
+    },
+    {
+      "from": "n171",
+      "to": "s_n38",
+      "distance": 204
+    },
+    {
+      "from": "n172",
+      "to": "s_n39",
+      "distance": 129
+    },
+    {
+      "from": "n172",
+      "to": "s_n38",
+      "distance": 148
+    },
+    {
+      "from": "n173",
+      "to": "s_n50",
+      "distance": 146
+    },
+    {
+      "from": "n173",
+      "to": "s_n49",
+      "distance": 167
+    },
+    {
+      "from": "n174",
+      "to": "s_n50",
+      "distance": 93
+    },
+    {
+      "from": "n174",
+      "to": "s_n39",
+      "distance": 274
+    },
+    {
+      "from": "n175",
+      "to": "s_n39",
+      "distance": 145
+    },
+    {
+      "from": "n175",
+      "to": "s_n38",
+      "distance": 177
+    },
+    {
+      "from": "n176",
+      "to": "s_n50",
+      "distance": 165
+    },
+    {
+      "from": "n176",
+      "to": "s_n49",
+      "distance": 188
+    },
+    {
+      "from": "n177",
+      "to": "s_n39",
+      "distance": 62
+    },
+    {
+      "from": "n177",
+      "to": "s_n28",
+      "distance": 246
+    },
+    {
+      "from": "n178",
+      "to": "s_n79",
+      "distance": 185
+    },
+    {
+      "from": "n178",
+      "to": "s_n78",
+      "distance": 211
+    },
+    {
+      "from": "n180",
+      "to": "s_n78",
+      "distance": 123
+    },
+    {
+      "from": "n180",
+      "to": "s_n79",
+      "distance": 171
+    },
+    {
+      "from": "n185",
+      "to": "s_n79",
+      "distance": 161
+    },
+    {
+      "from": "n185",
+      "to": "s_n78",
+      "distance": 236
+    },
+    {
+      "from": "n186",
+      "to": "s_n79",
+      "distance": 115
+    },
+    {
+      "from": "n186",
+      "to": "s_n78",
+      "distance": 206
+    },
+    {
+      "from": "n187",
+      "to": "s_n78",
+      "distance": 136
+    },
+    {
+      "from": "n187",
+      "to": "s_n79",
+      "distance": 185
+    },
+    {
+      "from": "n188",
+      "to": "s_n78",
+      "distance": 189
+    },
+    {
+      "from": "n188",
+      "to": "s_n79",
+      "distance": 218
+    },
+    {
+      "from": "n189",
+      "to": "s_n78",
+      "distance": 148
+    },
+    {
+      "from": "n190",
+      "to": "s_n78",
+      "distance": 64
+    },
+    {
+      "from": "n206",
+      "to": "s_n70",
+      "distance": 256
+    },
+    {
+      "from": "n207",
+      "to": "s_n70",
+      "distance": 273
+    },
+    {
+      "from": "n207",
+      "to": "s_n71",
+      "distance": 296
+    },
+    {
+      "from": "n208",
+      "to": "s_n70",
+      "distance": 206
+    },
+    {
+      "from": "n208",
+      "to": "s_n71",
+      "distance": 227
+    },
+    {
+      "from": "n214",
+      "to": "s_n69",
+      "distance": 207
+    },
+    {
+      "from": "n215",
+      "to": "s_n59",
+      "distance": 78
+    },
+    {
+      "from": "n215",
+      "to": "s_n69",
+      "distance": 290
+    },
+    {
+      "from": "n297",
+      "to": "s_n72",
+      "distance": 242
+    },
+    {
+      "from": "n297",
+      "to": "s_n73",
+      "distance": 249
+    },
+    {
+      "from": "n298",
+      "to": "s_n72",
+      "distance": 210
+    },
+    {
+      "from": "n298",
+      "to": "s_n73",
+      "distance": 216
+    },
+    {
+      "from": "n299",
+      "to": "s_n72",
+      "distance": 189
+    },
+    {
+      "from": "n299",
+      "to": "s_n73",
+      "distance": 240
+    },
+    {
+      "from": "n300",
+      "to": "s_n72",
+      "distance": 147
+    },
+    {
+      "from": "n300",
+      "to": "s_n73",
+      "distance": 211
+    },
+    {
+      "from": "n301",
+      "to": "s_n72",
+      "distance": 116
+    },
+    {
+      "from": "n301",
+      "to": "s_n73",
+      "distance": 255
+    },
+    {
+      "from": "n302",
+      "to": "s_n72",
+      "distance": 119
+    },
+    {
+      "from": "n302",
+      "to": "s_n71",
+      "distance": 268
+    },
+    {
+      "from": "n303",
+      "to": "s_n72",
+      "distance": 151
+    },
+    {
+      "from": "n303",
+      "to": "s_n71",
+      "distance": 213
+    },
+    {
+      "from": "n312",
+      "to": "s_n48",
+      "distance": 145
+    },
+    {
+      "from": "n312",
+      "to": "s_n58",
+      "distance": 198
+    },
+    {
+      "from": "n313",
+      "to": "s_n48",
+      "distance": 132
+    },
+    {
+      "from": "n313",
+      "to": "s_n58",
+      "distance": 201
+    },
+    {
+      "from": "n314",
+      "to": "s_n37",
+      "distance": 13
+    },
+    {
+      "from": "n314",
+      "to": "s_n48",
+      "distance": 283
+    },
+    {
+      "from": "n315",
+      "to": "s_n37",
+      "distance": 56
+    },
+    {
+      "from": "n315",
+      "to": "s_n36",
+      "distance": 282
+    },
+    {
+      "from": "n316",
+      "to": "s_n37",
+      "distance": 55
+    },
+    {
+      "from": "n316",
+      "to": "s_n48",
+      "distance": 292
+    },
+    {
+      "from": "n317",
+      "to": "s_n37",
+      "distance": 175
+    },
+    {
+      "from": "n318",
+      "to": "s_n48",
+      "distance": 89
+    },
+    {
+      "from": "n318",
+      "to": "s_n37",
+      "distance": 206
+    },
+    {
+      "from": "n47",
+      "to": "s_n69",
+      "distance": 919
+    },
+    {
+      "from": "n310",
+      "to": "s_n59",
+      "distance": 612
+    },
+    {
+      "from": "n320",
+      "to": "s_n77",
+      "distance": 1426
+    }
+  ]
+};

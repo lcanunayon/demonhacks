@@ -367,6 +367,8 @@ select.sinput optgroup { background:var(--surf2); color:var(--muted); font-size:
 
 <!-- Graph data — auto-generated from pedway_graph.json -->
 <script src="assets/pedway_graph.js"></script>
+<script src="assets/street_graph.js"></script>
+<script src="assets/bridge_edges.js"></script>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════
@@ -384,14 +386,15 @@ function displayName(n) {
 // Config
 // ════════════════════════════
 const NCFG = {
-  junction:   { color:'#505560', r:4,  label:false },
-  exit:       { color:'#ff8c00', r:8,  label:true  },
-  transit:    { color:'#2196f3', r:9,  label:true  },
-  restaurant: { color:'#f44336', r:8,  label:true  },
-  retail:     { color:'#9c27b0', r:7,  label:true  },
-  restroom:   { color:'#00bcd4', r:7,  label:true  },
-  parking:    { color:'#78909c', r:7,  label:true  },
-  landmark:   { color:'#ffc107', r:9,  label:true  },
+  junction:        { color:'#505560', r:4,  label:false },
+  exit:            { color:'#ff8c00', r:8,  label:true  },
+  transit:         { color:'#2196f3', r:9,  label:true  },
+  restaurant:      { color:'#f44336', r:8,  label:true  },
+  retail:          { color:'#9c27b0', r:7,  label:true  },
+  restroom:        { color:'#00bcd4', r:7,  label:true  },
+  parking:         { color:'#78909c', r:7,  label:true  },
+  landmark:        { color:'#ffc107', r:9,  label:true  },
+  street_junction: { color:'#4caf50', r:5,  label:false },
 };
 const DIR_ARROW = {
   north:'↑', northeast:'↗', east:'→', southeast:'↘',
@@ -437,7 +440,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }, { passive:false });
 
   if (window.PEDWAY_GRAPH) {
-    bootGraph(window.PEDWAY_GRAPH);
+    bootGraph(mergeStreetGraph(window.PEDWAY_GRAPH, window.STREET_GRAPH, window.BRIDGE_EDGES));
   } else {
     document.querySelector('#loading p').textContent = 'assets/pedway_graph.js not found. Load the JSON manually.';
     document.getElementById('load-btn').style.display = 'block';
@@ -451,6 +454,14 @@ function loadJSONFile(e) {
   const r = new FileReader();
   r.onload = ev => { try { bootGraph(JSON.parse(ev.target.result)); } catch { alert('Invalid JSON.'); } };
   r.readAsText(f); e.target.value = '';
+}
+
+function mergeStreetGraph(main, street, bridges) {
+  if (!street) return main;
+  const prefixedNodes = street.nodes.map(n => ({...n, id:'s_'+n.id}));
+  const prefixedEdges = (street.edges||[]).map(e => ({...e, from:'s_'+e.from, to:'s_'+e.to}));
+  const bridgeEdges = bridges ? (bridges.bridge_edges||[]) : [];
+  return { meta: main.meta, nodes: [...main.nodes, ...prefixedNodes], edges: [...main.edges, ...prefixedEdges, ...bridgeEdges] };
 }
 
 function bootGraph(data) {
@@ -520,7 +531,7 @@ function nodeAt(cx,cy) {
   const p=imgXY(cx,cy), th=20/G.zoom;
   let best=null, bd=th;
   for (const n of G.graph.nodes) {
-    if (n.type==='junction') continue;  // junctions are routing-only, not user-selectable
+    if (n.type==='junction' || n.type==='street_junction') continue;  // routing-only, not user-selectable
     if (G.filter!=='all' && n.type!==G.filter) continue;
     const d=Math.hypot(n.x-p.x, n.y-p.y);
     if (d<bd) { bd=d; best=n; }
@@ -609,8 +620,9 @@ function draw() {
   // Nodes
   const showJxn = G.zoom > 0.18;
   for (const n of G.graph.nodes) {
-    if (!showJxn && n.type==='junction') continue;
-    if (G.filter!=='all' && n.type!==G.filter && n.type!=='junction') continue;
+    const isRoutingOnly = n.type==='junction' || n.type==='street_junction';
+    if (!showJxn && isRoutingOnly) continue;
+    if (G.filter!=='all' && n.type!==G.filter && !isRoutingOnly) continue;
     const cfg = NCFG[n.type]||NCFG.junction;
     const isFrom  = G.fromNode?.id===n.id;
     const isTo    = G.toNode?.id===n.id;
@@ -622,9 +634,8 @@ function draw() {
     if (onRoute && !isFrom && !isTo) { ctx.shadowColor='#2196f3'; ctx.shadowBlur=10; }
     if (isCur && !isFrom && !isTo)   { ctx.shadowColor='#64b5f6'; ctx.shadowBlur=16; }
 
-    // Junctions are near-invisible — they exist only for routing
-    const isJunction = n.type === 'junction';
-    ctx.globalAlpha = isJunction && !onRoute ? 0.08 : 1;
+    // Routing-only nodes are near-invisible — they exist only for pathfinding
+    ctx.globalAlpha = isRoutingOnly && !onRoute ? 0.08 : 1;
 
     ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2);
     ctx.fillStyle = isFrom ? '#4caf50' : isTo ? '#f44336' : onRoute ? '#2196f3' : cfg.color;
@@ -799,7 +810,7 @@ function populateSelects() {
   const groups = {};
   TYPE_ORDER.forEach(t => groups[t]=[]);
   G.graph.nodes
-    .filter(n => n.type !== 'junction')
+    .filter(n => n.type !== 'junction' && n.type !== 'street_junction')
     .sort((a,b) => displayName(a).localeCompare(displayName(b)))
     .forEach(n => { if (groups[n.type]) groups[n.type].push(n); });
   const opts = '<option value="">— Select a location —</option>' +

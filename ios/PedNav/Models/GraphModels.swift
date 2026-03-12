@@ -19,8 +19,9 @@ struct MapNode: Identifiable, Hashable {
         case "retail":     return "Shop"
         case "restroom":   return "Restroom"
         case "parking":    return "Parking"
-        case "landmark":   return "Landmark"
-        default:           return "Junction"
+        case "landmark":        return "Landmark"
+        case "street_junction": return "Street Junction"
+        default:                return "Junction"
         }
     }
 

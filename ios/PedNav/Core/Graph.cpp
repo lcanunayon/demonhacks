@@ -11,7 +11,8 @@ NodeType nodeTypeFromString(const std::string& s) {
     if (s == "retail")     return NodeType::Retail;
     if (s == "restroom")   return NodeType::Restroom;
     if (s == "parking")    return NodeType::Parking;
-    if (s == "landmark")   return NodeType::Landmark;
+    if (s == "landmark")        return NodeType::Landmark;
+    if (s == "street_junction") return NodeType::StreetJunction;
     return NodeType::Unknown;
 }
 
@@ -24,8 +25,9 @@ std::string nodeTypeToString(NodeType t) {
         case NodeType::Retail:     return "retail";
         case NodeType::Restroom:   return "restroom";
         case NodeType::Parking:    return "parking";
-        case NodeType::Landmark:   return "landmark";
-        default:                   return "unknown";
+        case NodeType::Landmark:        return "landmark";
+        case NodeType::StreetJunction:  return "street_junction";
+        default:                        return "unknown";
     }
 }
 
@@ -38,8 +40,9 @@ std::string nodeTypeDisplayName(NodeType t) {
         case NodeType::Retail:     return "Shop";
         case NodeType::Restroom:   return "Restroom";
         case NodeType::Parking:    return "Parking";
-        case NodeType::Landmark:   return "Landmark";
-        default:                   return "Unknown";
+        case NodeType::Landmark:        return "Landmark";
+        case NodeType::StreetJunction:  return "Street Junction";
+        default:                        return "Unknown";
     }
 }
 
@@ -53,8 +56,9 @@ uint32_t nodeTypeColor(NodeType t) {
         case NodeType::Retail:     return 0xFF9C27B0;
         case NodeType::Restroom:   return 0xFF00BCD4;
         case NodeType::Parking:    return 0xFF78909C;
-        case NodeType::Landmark:   return 0xFFFFC107;
-        default:                   return 0xFF888888;
+        case NodeType::Landmark:        return 0xFFFFC107;
+        case NodeType::StreetJunction:  return 0xFF4CAF50;
+        default:                        return 0xFF888888;
     }
 }
 

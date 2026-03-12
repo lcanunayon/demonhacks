@@ -6,7 +6,7 @@
 namespace PedNav {
 
 enum class NodeType : uint8_t {
-    Junction = 0, Exit, Transit, Restaurant, Retail, Restroom, Parking, Landmark, Unknown
+    Junction = 0, Exit, Transit, Restaurant, Retail, Restroom, Parking, Landmark, StreetJunction, Unknown
 };
 
 NodeType nodeTypeFromString(const std::string& s);

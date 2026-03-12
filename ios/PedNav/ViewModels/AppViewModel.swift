@@ -51,23 +51,64 @@ class AppViewModel: ObservableObject {
     }
 
     func loadGraph() {
-        guard let url = Bundle.main.url(forResource: "pedway_graph", withExtension: "json"),
-              let jsonString = try? String(contentsOf: url, encoding: .utf8) else {
+        guard let pedwayURL = Bundle.main.url(forResource: "pedway_graph", withExtension: "json"),
+              let pedwayData = try? Data(contentsOf: pedwayURL),
+              var root = (try? JSONSerialization.jsonObject(with: pedwayData)) as? [String: Any] else {
             print("PedNav: Failed to load pedway_graph.json from bundle")
             return
         }
+
+        // Merge street_graph.json — prefix all IDs with "s_" to avoid conflicts
+        if let streetURL = Bundle.main.url(forResource: "street_graph", withExtension: "json"),
+           let streetData = try? Data(contentsOf: streetURL),
+           let streetRoot = (try? JSONSerialization.jsonObject(with: streetData)) as? [String: Any] {
+            var baseNodes = root["nodes"] as? [[String: Any]] ?? []
+            var baseEdges = root["edges"] as? [[String: Any]] ?? []
+            if let sNodes = streetRoot["nodes"] as? [[String: Any]] {
+                baseNodes += sNodes.map { n -> [String: Any] in
+                    var m = n; if let id = m["id"] as? String { m["id"] = "s_\(id)" }; return m
+                }
+            }
+            if let sEdges = streetRoot["edges"] as? [[String: Any]] {
+                baseEdges += sEdges.map { e -> [String: Any] in
+                    var m = e
+                    if let f = m["from"] as? String { m["from"] = "s_\(f)" }
+                    if let t = m["to"]   as? String { m["to"]   = "s_\(t)" }
+                    return m
+                }
+            }
+            root["nodes"] = baseNodes
+            root["edges"] = baseEdges
+        }
+
+        // Add bridge edges (pedway ↔ street — IDs already in final form)
+        if let bridgeURL = Bundle.main.url(forResource: "bridge_edges", withExtension: "json"),
+           let bridgeData = try? Data(contentsOf: bridgeURL),
+           let bridgeRoot = (try? JSONSerialization.jsonObject(with: bridgeData)) as? [String: Any],
+           let bridgeList = bridgeRoot["bridge_edges"] as? [[String: Any]] {
+            var baseEdges = root["edges"] as? [[String: Any]] ?? []
+            baseEdges += bridgeList
+            root["edges"] = baseEdges
+        }
+
+        guard let merged = try? JSONSerialization.data(withJSONObject: root),
+              let jsonString = String(data: merged, encoding: .utf8) else {
+            print("PedNav: Failed to serialize merged graph")
+            return
+        }
+
         let success = core.loadGraph(fromJSON: jsonString)
         if success {
             nodes = core.allNodes().map { MapNode(from: $0) }
             edges = core.allEdges().map { (from: $0["from"] ?? "", to: $0["to"] ?? "") }
-            // Cache map image for mini-map generation
             if let mapURL = Bundle.main.url(forResource: "map", withExtension: "jpg") {
                 mapImage = UIImage(contentsOfFile: mapURL.path)
             }
             isLoaded = true
-            print("PedNav: Loaded \(nodes.count) nodes, \(edges.count) edges")
+            let streetCount = nodes.filter { $0.id.hasPrefix("s_") }.count
+            print("PedNav: Loaded \(nodes.count) nodes (\(streetCount) street), \(edges.count) edges")
         } else {
-            print("PedNav: core.loadGraphFromJSON returned false")
+            print("PedNav: loadGraph failed")
         }
     }
 
