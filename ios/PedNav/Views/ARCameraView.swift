@@ -80,16 +80,17 @@ final class MiniMapLiveView: UIView {
             CGPoint(x: x * sc + ox, y: y * sc + oy)
         }
 
-        // Cropped map image at 65% opacity
+        // Cropped map image at 65% opacity.
+        // Draw the full image positioned at its map-coordinate origin (ox, oy) scaled by sc,
+        // then let the clip mask cut it to the minimap bounds.
+        // This replicates the web's drawImage(img, sx,sy,sw,sh, dx,dy,dw,dh) crop behavior.
         if let img = mapImage, let cgImg = img.cgImage {
             let iw = CGFloat(cgImg.width), ih = CGFloat(cgImg.height)
-            let sx = max(0, x0), sy = max(0, y0)
-            let sw = min(iw, x1) - sx, sh = min(ih, y1) - sy
-            if sw > 0 && sh > 0 {
-                let dp = mm(sx, sy)
-                img.draw(in: CGRect(x: dp.x, y: dp.y, width: sw * sc, height: sh * sc),
-                         blendMode: .normal, alpha: 0.65)
-            }
+            ctx.saveGState()
+            ctx.clip(to: rect)
+            img.draw(in: CGRect(x: ox, y: oy, width: iw * sc, height: ih * sc),
+                     blendMode: .normal, alpha: 0.65)
+            ctx.restoreGState()
         }
 
         // Route edges
@@ -148,8 +149,25 @@ final class MiniMapLiveView: UIView {
         ctx.setStrokeColor(UIColor.white.cgColor); ctx.setLineWidth(1.5)
         ctx.strokeEllipse(in: CGRect(x: p.x - 6, y: p.y - 6, width: 12, height: 12))
 
-        // Direction arrow pointing where to go
-        let ang = arrowAngle(directionIcon)
+        // Direction arrow: computed from current node → next step node (map pixel bearing).
+        // This gives true compass direction on the map regardless of turn instruction.
+        // atan2(dy, dx) gives angle from +x axis; adding π/2 rotates so "up = north".
+        let ang: CGFloat
+        if currentStepIndex + 1 < steps.count,
+           let nextNode = nodeMap[steps[currentStepIndex + 1].nodeId] {
+            let dx = nextNode.x - curNode.x
+            let dy = nextNode.y - curNode.y
+            ang = atan2(dy, dx) + .pi / 2
+        } else if currentStepIndex > 0,
+                  let prevNode = nodeMap[steps[currentStepIndex - 1].nodeId] {
+            // Last step: continue in same direction we were traveling
+            let dx = curNode.x - prevNode.x
+            let dy = curNode.y - prevNode.y
+            ang = atan2(dy, dx) + .pi / 2
+        } else {
+            ang = 0
+        }
+
         ctx.saveGState()
         ctx.translateBy(x: p.x, y: p.y)
         ctx.rotate(by: ang)
@@ -164,20 +182,6 @@ final class MiniMapLiveView: UIView {
         ctx.setFillColor(UIColor.white.cgColor)
         ctx.fillPath()
         ctx.restoreGState()
-    }
-
-    private func arrowAngle(_ icon: String) -> CGFloat {
-        switch icon {
-        case "↑":  return 0
-        case "↗":  return .pi / 4
-        case "→":  return .pi / 2
-        case "↘":  return 3 * .pi / 4
-        case "↓":  return .pi
-        case "↙":  return 5 * .pi / 4
-        case "←":  return -.pi / 2
-        case "↖":  return -.pi / 4
-        default:   return 0
-        }
     }
 }
 
