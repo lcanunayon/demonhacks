@@ -19,10 +19,13 @@ class AppViewModel: ObservableObject {
     @Published var isLoaded: Bool = false
     @Published var edges: [(from: String, to: String)] = []
     @Published var showLabels: Bool = true
-    @Published var routeMiniMapImage: UIImage? = nil
 
     let core = PedNavCore()
-    private var mapImage: UIImage? = nil   // full map, loaded once
+    var mapImage: UIImage? = nil   // full map, loaded once
+
+    var nodeMap: [String: MapNode] {
+        Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+    }
 
     var filteredNodes: [MapNode] {
         if filterType == "all" { return nodes }
@@ -120,7 +123,6 @@ class AppViewModel: ObservableObject {
         steps = rawSteps.map { NavStep(from: $0) }
         currentStepIndex = 0
         isRoutePanelOpen = !steps.isEmpty
-        generateRouteMiniMap()
     }
 
     func clearRoute() {
@@ -130,88 +132,6 @@ class AppViewModel: ObservableObject {
         toNode = nil
         isRoutePanelOpen = false
         currentStepIndex = 0
-        routeMiniMapImage = nil
-    }
-
-    // MARK: - Route mini-map rendering
-
-    private func generateRouteMiniMap() {
-        guard route.count > 1, let mapImg = mapImage else {
-            routeMiniMapImage = nil
-            return
-        }
-
-        // Build lookup
-        var nMap: [String: MapNode] = [:]
-        for n in nodes { nMap[n.id] = n }
-
-        // Bounding box of route nodes
-        var minX: CGFloat = .infinity,  minY: CGFloat = .infinity
-        var maxX: CGFloat = -.infinity, maxY: CGFloat = -.infinity
-        for nid in route {
-            guard let n = nMap[nid] else { continue }
-            minX = min(minX, n.x); minY = min(minY, n.y)
-            maxX = max(maxX, n.x); maxY = max(maxY, n.y)
-        }
-        guard minX != .infinity else { routeMiniMapImage = nil; return }
-
-        // Padding in map-pixel units
-        let pad: CGFloat = 120
-        minX = max(0, minX - pad);  minY = max(0, minY - pad)
-        maxX = min(mapImg.size.width, maxX + pad)
-        maxY = min(mapImg.size.height, maxY + pad)
-
-        let cropW = maxX - minX, cropH = maxY - minY
-        guard cropW > 0, cropH > 0 else { routeMiniMapImage = nil; return }
-
-        // Scale so the crop fills a 300×300 canvas
-        let canvas: CGFloat = 300
-        let scale = min(canvas / cropW, canvas / cropH)
-        let outW = cropW * scale, outH = cropH * scale
-
-        UIGraphicsBeginImageContextWithOptions(CGSize(width: outW, height: outH), true, 0)
-        defer { UIGraphicsEndImageContext() }
-        guard let ctx = UIGraphicsGetCurrentContext() else { return }
-
-        // Draw the cropped map region
-        ctx.saveGState()
-        ctx.scaleBy(x: scale, y: scale)
-        ctx.translateBy(x: -minX, y: -minY)
-        mapImg.draw(in: CGRect(origin: .zero, size: mapImg.size))
-        ctx.restoreGState()
-
-        // Draw route — two-pass
-        ctx.setLineCap(.round); ctx.setLineJoin(.round)
-        func routePt(_ nid: String) -> CGPoint? {
-            guard let n = nMap[nid] else { return nil }
-            return CGPoint(x: (n.x - minX) * scale, y: (n.y - minY) * scale)
-        }
-        // Border
-        ctx.setStrokeColor(UIColor(red: 0x0D/255.0, green: 0x47/255.0, blue: 0xA1/255.0, alpha: 0.9).cgColor)
-        ctx.setLineWidth(5.0)
-        for i in 0..<(route.count - 1) {
-            guard let a = routePt(route[i]), let b = routePt(route[i + 1]) else { continue }
-            ctx.move(to: a); ctx.addLine(to: b); ctx.strokePath()
-        }
-        // Blue fill
-        ctx.setStrokeColor(UIColor(red: 0x21/255.0, green: 0x96/255.0, blue: 0xF3/255.0, alpha: 1).cgColor)
-        ctx.setLineWidth(3.0)
-        for i in 0..<(route.count - 1) {
-            guard let a = routePt(route[i]), let b = routePt(route[i + 1]) else { continue }
-            ctx.move(to: a); ctx.addLine(to: b); ctx.strokePath()
-        }
-        // Start dot (green)
-        if let p = routePt(route.first!) {
-            ctx.setFillColor(UIColor(red: 0x4C/255.0, green: 0xAF/255.0, blue: 0x50/255.0, alpha: 1).cgColor)
-            ctx.fillEllipse(in: CGRect(x: p.x - 6, y: p.y - 6, width: 12, height: 12))
-        }
-        // End dot (red)
-        if let p = routePt(route.last!) {
-            ctx.setFillColor(UIColor(red: 0xF4/255.0, green: 0x43/255.0, blue: 0x36/255.0, alpha: 1).cgColor)
-            ctx.fillEllipse(in: CGRect(x: p.x - 6, y: p.y - 6, width: 12, height: 12))
-        }
-
-        routeMiniMapImage = UIGraphicsGetImageFromCurrentImageContext()
     }
 
     func selectNode(_ node: MapNode) {
