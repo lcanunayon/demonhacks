@@ -1,3 +1,5 @@
+demo: https://lcanunayon.github.io/demonhacks/
+
 # PedNav PWA
 
 Progressive Web App build of the Chicago Pedway navigator.
